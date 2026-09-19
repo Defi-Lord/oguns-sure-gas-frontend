@@ -70,13 +70,11 @@ const primaryNavigation:
       label: 'Products',
       href: '/admin/products',
       icon: PackageSearch,
-      disabled: true,
     },
     {
       label: 'Inventory',
       href: '/admin/inventory',
       icon: Boxes,
-      disabled: true,
     },
     {
       label: 'Deliveries',
@@ -247,6 +245,33 @@ export function AdminSidebar({
       (state) => state.user,
     );
 
+
+  /*
+   * BRANCH_MANAGER_STAGE_2B_NAVIGATION
+   *
+   * The AdminShell route fence remains the real
+   * authorization boundary.
+   *
+   * This sidebar filter only prevents Branch Managers
+   * from seeing company-wide destinations that Stage 2B
+   * has not yet made branch-aware.
+   */
+  const canSeeNavigationItem = (
+    href: string,
+  ) => {
+    if (
+      user?.role !==
+      'BRANCH_MANAGER'
+    ) {
+      return true;
+    }
+
+    return [
+      '/admin/products',
+      '/admin/inventory',
+    ].includes(href);
+  };
+
   const initials =
     user
       ? `${user.firstName.charAt(
@@ -350,8 +375,7 @@ export function AdminSidebar({
 
           <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
             <div className="space-y-1">
-              {primaryNavigation.map(
-                (item) => (
+              {primaryNavigation.filter((item) => canSeeNavigationItem(item.href)).map((item) => (
                   <SidebarItem
                     key={
                       item.href
@@ -370,8 +394,7 @@ export function AdminSidebar({
             <div className="mx-2 my-4 border-t border-white/10" />
 
             <div className="space-y-1">
-              {secondaryNavigation.map(
-                (item) => (
+              {secondaryNavigation.filter((item) => canSeeNavigationItem(item.href)).map((item) => (
                   <SidebarItem
                     key={
                       item.href

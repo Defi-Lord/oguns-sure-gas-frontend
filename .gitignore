@@ -39,3 +39,22 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+# OGUN-GAS-PREDEPLOY-IGNORE
+
+# Local environment / secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*
+!.env.example
+
+# ChatGPT development stage backups
+.stage*/
+.predeploy-gitignore-backup-*/
+
+# Temporary audits / generated inspection files
+branches-contract-audit.txt
+products-inventory-stage1-source.txt
+*.stage1-backup

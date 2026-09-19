@@ -112,7 +112,9 @@ export function AdminShell({
 
     if (
       user.role !==
-      'SUPER_ADMIN'
+      'SUPER_ADMIN' &&
+      user.role !==
+      'BRANCH_MANAGER'
     ) {
       clearAuth();
 
@@ -134,8 +136,12 @@ export function AdminShell({
     }
 
     if (
-      sessionQuery.data.role !==
-        'SUPER_ADMIN' ||
+      (
+        sessionQuery.data.role !==
+          'SUPER_ADMIN' &&
+        sessionQuery.data.role !==
+          'BRANCH_MANAGER'
+      ) ||
       sessionQuery.data.status !==
         'ACTIVE'
     ) {
@@ -157,6 +163,53 @@ export function AdminShell({
     sessionQuery.data,
     setUser,
   ]);
+
+  /*
+   * BRANCH_MANAGER_STAGE_2B_ROUTE_FENCE
+   *
+   * Temporary Stage 2B portal boundary.
+   *
+   * Branch Managers are now legitimate portal users,
+   * but only branch-aware areas that have completed
+   * their role/scoping integration are exposed here.
+   *
+   * This list will expand as Orders, Riders,
+   * Deliveries, Analytics and branch settings are
+   * upgraded.
+   */
+  useEffect(() => {
+    if (
+      user?.role !==
+      'BRANCH_MANAGER'
+    ) {
+      return;
+    }
+
+    const allowedBranchManagerRoutes = [
+      '/admin/products',
+      '/admin/inventory',
+    ];
+
+    const isAllowed =
+      allowedBranchManagerRoutes.some(
+        (route) =>
+          pathname === route ||
+          pathname.startsWith(
+            `${route}/`,
+          ),
+      );
+
+    if (!isAllowed) {
+      router.replace(
+        '/admin/products',
+      );
+    }
+  }, [
+    pathname,
+    router,
+    user?.role,
+  ]);
+
 
   useEffect(() => {
     if (

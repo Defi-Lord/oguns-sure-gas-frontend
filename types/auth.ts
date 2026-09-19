@@ -10,6 +10,13 @@ export type UserStatus =
   | 'INACTIVE'
   | 'SUSPENDED';
 
+export interface AuthManagedBranch {
+  id: string;
+  name: string;
+  code: string;
+  isActive: boolean;
+}
+
 export interface AuthUser {
   id: string;
   firstName: string;
@@ -18,6 +25,11 @@ export interface AuthUser {
   phone: string | null;
   role: UserRole;
   status: UserStatus;
+
+  managedBranch?:
+    | AuthManagedBranch
+    | null;
+
 }
 
 export interface AuthTokens {

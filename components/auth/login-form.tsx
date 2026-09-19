@@ -106,12 +106,14 @@ export function LoginForm() {
 
         if (
           user.role !==
-          'SUPER_ADMIN'
+          'SUPER_ADMIN' &&
+          user.role !==
+          'BRANCH_MANAGER'
         ) {
           clearAuth();
 
           setErrorMessage(
-            'This portal is restricted to Super Admin accounts.',
+            'This portal is restricted to Super Admin and Branch Manager accounts.',
           );
 
           return;
