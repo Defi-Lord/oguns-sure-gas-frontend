@@ -185,6 +185,7 @@ export const uploadProductImages =
             'Content-Type':
               'multipart/form-data',
           },
+          timeout: 120_000,
         },
       );
 
