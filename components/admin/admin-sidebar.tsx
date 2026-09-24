@@ -90,8 +90,7 @@ const primaryNavigation:
       label: 'Staff',
       href: '/admin/staff',
       icon: UserRoundCog,
-      disabled: true,
-    },
+      },
   ];
 
 const secondaryNavigation:
