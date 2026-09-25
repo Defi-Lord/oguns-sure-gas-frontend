@@ -99,7 +99,6 @@ const secondaryNavigation:
       label: 'Campaigns',
       href: '/admin/campaigns',
       icon: Gift,
-      disabled: true,
     },
     {
       label: 'Notifications',
