@@ -110,7 +110,6 @@ const secondaryNavigation:
       label: 'Reports',
       href: '/admin/reports',
       icon: ReceiptText,
-      disabled: true,
     },
     {
       label: 'Analytics',
