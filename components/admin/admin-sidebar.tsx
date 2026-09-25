@@ -104,7 +104,6 @@ const secondaryNavigation:
       label: 'Notifications',
       href: '/admin/notifications',
       icon: Bell,
-      disabled: true,
       liveDot: true,
     },
     {
