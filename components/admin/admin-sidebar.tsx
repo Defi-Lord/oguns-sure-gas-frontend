@@ -115,7 +115,6 @@ const secondaryNavigation:
       label: 'Analytics',
       href: '/admin/analytics',
       icon: BarChart3,
-      disabled: true,
     },
     {
       label: 'Settings',
