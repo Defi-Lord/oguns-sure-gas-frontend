@@ -205,7 +205,7 @@ export function LoginForm() {
             id="email"
             type="email"
             autoComplete="email"
-            placeholder="admin@ogungas.com"
+            placeholder="admin@mysuregas.com"
             value={email}
             onChange={(event) =>
               setEmail(

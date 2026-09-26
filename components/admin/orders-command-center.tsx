@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import {
   useMemo,
@@ -470,7 +470,7 @@ function EmptyState({
       <p className="mt-2 max-w-md text-sm leading-6 text-slate-500 dark:text-slate-400">
         {filtered
           ? 'Nothing matches the current search and filters. Clear them to return to the complete operational feed.'
-          : 'Customer orders will appear here as soon as they begin flowing through the Ogun Gas platform.'}
+          : 'Customer orders will appear here as soon as they begin flowing through the MySureGas platform.'}
       </p>
 
       {filtered ? (
@@ -1593,7 +1593,7 @@ export function OrdersCommandCenter() {
               </h1>
 
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500 sm:text-[15px] dark:text-slate-400">
-                Monitor customer orders, payments, fulfilment branches and delivery progress across Ogun&apos;s Sure Gas.
+                Monitor customer orders, payments, fulfilment branches and delivery progress across MySureGas.
               </p>
             </div>
 

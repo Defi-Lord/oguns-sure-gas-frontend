@@ -340,7 +340,7 @@ export function AdminSidebar({
               {!collapsed ? (
                 <div className="min-w-0">
                   <h1 className="truncate font-serif text-[18px] font-semibold text-white">
-                    Ogun&apos;s Sure Gas
+                    MySureGas
                   </h1>
 
                   <p className="mt-1 truncate text-[10px] text-emerald-100/55">

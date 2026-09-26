@@ -1,4 +1,4 @@
-﻿import type {
+import type {
   Metadata,
 } from 'next';
 
@@ -10,11 +10,11 @@ import {
 
 export const metadata: Metadata = {
   title: {
-    default: "Ogun's Sure Gas Admin",
-    template: "%s | Ogun's Sure Gas",
+    default: "MySureGas Admin",
+    template: "%s | MySureGas",
   },
   description:
-    "Ogun's Sure Gas administration and operations command center.",
+    "MySureGas administration and operations command center.",
 };
 
 export default function RootLayout({

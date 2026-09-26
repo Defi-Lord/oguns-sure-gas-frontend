@@ -494,7 +494,7 @@ export function DashboardOverview() {
             </p>
 
             <p className="mt-2 text-[11px] text-slate-400">
-              — Ogun&apos;s Sure Gas
+              — MySureGas
             </p>
           </div>
 

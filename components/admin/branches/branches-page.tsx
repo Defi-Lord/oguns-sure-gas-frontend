@@ -495,8 +495,7 @@ function CreateBranchDialog({
           </DialogTitle>
 
           <DialogDescription>
-            Create a new Ogun&apos;s
-            Sure Gas operating
+            Create a new MySureGas operating
             location.
           </DialogDescription>
         </DialogHeader>
@@ -534,7 +533,7 @@ function CreateBranchDialog({
                       .value,
                   )
                 }
-                placeholder="Ogun Gas - Ota"
+                placeholder="MySureGas - Ota"
                 required
               />
             </div>
@@ -677,7 +676,7 @@ function CreateBranchDialog({
                       .value,
                   )
                 }
-                placeholder="branch@ogungas.com"
+                placeholder="branch@mysuregas.com"
               />
             </div>
 
@@ -808,7 +807,7 @@ function CreateBranchDialog({
                       .value,
                   )
                 }
-                placeholder="Ogun's Sure Gas"
+                placeholder="MySureGas"
               />
             </div>
           </div>
@@ -2144,8 +2143,7 @@ export function BranchesPage() {
               </h1>
 
               <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-500">
-                Manage every Ogun&apos;s
-                Sure Gas operating
+                Manage every MySureGas operating
                 location, branch contact,
                 manager and settlement
                 profile from one place.

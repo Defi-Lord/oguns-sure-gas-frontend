@@ -1351,7 +1351,7 @@ export function ReportsPage() {
         url;
 
       anchor.download =
-        `oguns-sure-gas-${reportKind}-report-page-${page}-${todayInput()}.csv`;
+        `mysuregas-${reportKind}-report-page-${page}-${todayInput()}.csv`;
 
       document.body.appendChild(
         anchor,

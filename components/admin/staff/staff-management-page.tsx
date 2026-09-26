@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import {
   useCallback,
@@ -1110,7 +1110,7 @@ export function StaffManagementPage() {
                 approve accepted
                 invitations and control
                 workforce access across
-                Ogun&apos;s Sure Gas.
+                MySureGas.
               </p>
 
               {authUser && (

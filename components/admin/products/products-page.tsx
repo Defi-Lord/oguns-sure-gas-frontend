@@ -2586,7 +2586,7 @@ export function ProductsPage() {
           description={
             selectedProduct
               ? 'Update product details, pricing, category or availability.'
-              : 'Add a new item to the Ogun’s Sure Gas master catalogue.'
+              : 'Add a new item to the MySureGas master catalogue.'
           }
           onClose={closeProductEditor}
         >

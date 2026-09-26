@@ -31,7 +31,7 @@ export default function AdminLoginPage() {
             className="mb-6 rounded-full px-4 py-2"
           >
             <Zap className="mr-2 size-4" />
-            Ogun&apos;s Sure Gas
+            MySureGas
           </Badge>
 
           <h1 className="max-w-3xl text-5xl font-semibold tracking-tight text-slate-950 xl:text-6xl">
@@ -75,7 +75,7 @@ export default function AdminLoginPage() {
               variant="secondary"
               className="rounded-full px-4 py-2"
             >
-              Ogun&apos;s Sure Gas
+              MySureGas
             </Badge>
           </div>
 
@@ -92,8 +92,7 @@ export default function AdminLoginPage() {
 
                 <CardDescription className="mt-2">
                   Sign in with your
-                  authorized Ogun&apos;s
-                  Sure Gas administrator
+                  authorized MySureGas administrator
                   account.
                 </CardDescription>
               </div>
@@ -106,8 +105,7 @@ export default function AdminLoginPage() {
 
           <p className="mt-6 text-center text-xs text-slate-500">
             Protected administration
-            environment · Ogun&apos;s
-            Sure Gas
+            environment · MySureGas
           </p>
         </section>
       </div>
