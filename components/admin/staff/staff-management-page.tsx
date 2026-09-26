@@ -632,7 +632,17 @@ export function StaffManagementPage() {
 
   useEffect(
     () => {
-      void loadWorkspace();
+      const frame =
+        window.requestAnimationFrame(
+          () => {
+            void loadWorkspace();
+          },
+        );
+
+      return () =>
+        window.cancelAnimationFrame(
+          frame,
+        );
     },
     [
       loadWorkspace,

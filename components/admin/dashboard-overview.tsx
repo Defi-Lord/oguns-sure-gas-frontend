@@ -428,17 +428,27 @@ export function DashboardOverview() {
   );
 
   useEffect(() => {
-    setNow(new Date());
+    const initialFrame =
+      window.requestAnimationFrame(
+        () => {
+          setNow(new Date());
+        },
+      );
 
     const timer =
       window.setInterval(() => {
         setNow(new Date());
       }, 60_000);
 
-    return () =>
+    return () => {
+      window.cancelAnimationFrame(
+        initialFrame,
+      );
+
       window.clearInterval(
         timer,
       );
+    };
   }, []);
 
   return (

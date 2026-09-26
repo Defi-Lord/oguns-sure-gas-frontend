@@ -1080,8 +1080,18 @@ export function ReportsPage() {
 
   useEffect(
     () => {
-      setPage(1);
-      setSearch('');
+      const frame =
+        window.requestAnimationFrame(
+          () => {
+            setPage(1);
+            setSearch('');
+          },
+        );
+
+      return () =>
+        window.cancelAnimationFrame(
+          frame,
+        );
     },
     [
       reportKind,
