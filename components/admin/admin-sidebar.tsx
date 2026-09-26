@@ -120,7 +120,6 @@ const secondaryNavigation:
       label: 'Settings',
       href: '/admin/settings',
       icon: Settings,
-      disabled: true,
     },
   ];
 
