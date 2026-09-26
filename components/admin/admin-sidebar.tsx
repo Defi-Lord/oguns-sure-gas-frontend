@@ -20,6 +20,7 @@ import {
   MoreHorizontal,
   PackageSearch,
   ReceiptText,
+  ScrollText,
   Settings,
   Truck,
   UserRoundCog,
@@ -115,6 +116,11 @@ const secondaryNavigation:
       label: 'Analytics',
       href: '/admin/analytics',
       icon: BarChart3,
+    },
+    {
+      label: 'Audit',
+      href: '/admin/audit',
+      icon: ScrollText,
     },
     {
       label: 'Settings',
