@@ -6,7 +6,7 @@ export interface BranchManager {
   role: 'BRANCH_MANAGER';
 }
 
-export interface Branch {
+export interface PublicBranch {
   id: string;
   name: string;
   code: string;
@@ -20,16 +20,27 @@ export interface Branch {
   phone: string | null;
   email: string | null;
 
+  isActive: boolean;
+
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Branch
+  extends PublicBranch {
   bankName: string | null;
   bankAccountName: string | null;
   bankAccountNumber: string | null;
 
-  isActive: boolean;
-
   manager: BranchManager | null;
+}
 
-  createdAt: string;
-  updatedAt: string;
+export interface PublicBranchListResponse {
+  success: true;
+  message: string;
+  data: {
+    branches: PublicBranch[];
+  };
 }
 
 export interface BranchListResponse {
@@ -37,6 +48,14 @@ export interface BranchListResponse {
   message: string;
   data: {
     branches: Branch[];
+  };
+}
+
+export interface PublicBranchResponse {
+  success: true;
+  message: string;
+  data: {
+    branch: PublicBranch;
   };
 }
 

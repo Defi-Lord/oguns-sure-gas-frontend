@@ -287,6 +287,12 @@ export function AdminSidebar({
         )}`.toUpperCase()
       : 'OA';
 
+  const roleLabel =
+    user?.role ===
+    'BRANCH_MANAGER'
+      ? 'Branch Manager'
+      : 'Super Admin';
+
   return (
     <>
       {mobileOpen ? (
@@ -439,7 +445,7 @@ export function AdminSidebar({
                     </p>
 
                     <p className="mt-0.5 text-[10px] text-emerald-100/55">
-                      Super Admin
+                      {roleLabel}
                     </p>
                   </div>
 

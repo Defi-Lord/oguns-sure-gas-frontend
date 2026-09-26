@@ -61,6 +61,12 @@ export function AdminTopbar({
       )}`.toUpperCase()
     : 'OA';
 
+  const roleLabel =
+    user?.role ===
+    'BRANCH_MANAGER'
+      ? 'Branch Manager'
+      : 'Super Admin';
+
   useEffect(() => {
     const savedTheme =
       window.localStorage.getItem(
@@ -80,14 +86,25 @@ export function AdminTopbar({
         ? 'dark'
         : 'light';
 
-    setTheme(
-      initialTheme,
-    );
-
     document.documentElement.classList.toggle(
       'dark',
       initialTheme === 'dark',
     );
+
+    const frameId =
+      window.requestAnimationFrame(
+        () => {
+          setTheme(
+            initialTheme,
+          );
+        },
+      );
+
+    return () => {
+      window.cancelAnimationFrame(
+        frameId,
+      );
+    };
   }, []);
 
   useEffect(() => {
@@ -260,7 +277,7 @@ export function AdminTopbar({
                 </p>
 
                 <p className="mt-0.5 text-[10px] text-slate-400">
-                  Super Admin
+                  {roleLabel}
                 </p>
               </div>
 

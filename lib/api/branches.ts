@@ -5,13 +5,16 @@ import type {
   BranchListResponse,
   BranchResponse,
   CreateBranchInput,
+  PublicBranch,
+  PublicBranchListResponse,
+  PublicBranchResponse,
   UpdateBranchInput,
 } from '@/types/branch';
 
 export const getBranches =
-  async (): Promise<Branch[]> => {
+  async (): Promise<PublicBranch[]> => {
     const response =
-      await api.get<BranchListResponse>(
+      await api.get<PublicBranchListResponse>(
         '/branches',
       );
 
@@ -31,9 +34,9 @@ export const getManagementBranches =
 export const getBranch =
   async (
     branchId: string,
-  ): Promise<Branch> => {
+  ): Promise<PublicBranch> => {
     const response =
-      await api.get<BranchResponse>(
+      await api.get<PublicBranchResponse>(
         `/branches/${branchId}`,
       );
 
