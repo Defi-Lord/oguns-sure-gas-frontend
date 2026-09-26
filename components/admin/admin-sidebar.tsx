@@ -25,6 +25,7 @@ import {
   Truck,
   UserRoundCog,
   UsersRound,
+  WalletCards,
   X,
 } from 'lucide-react';
 
@@ -116,6 +117,11 @@ const secondaryNavigation:
       label: 'Analytics',
       href: '/admin/analytics',
       icon: BarChart3,
+    },
+    {
+      label: 'Finance',
+      href: '/admin/finance',
+      icon: WalletCards,
     },
     {
       label: 'Audit',
