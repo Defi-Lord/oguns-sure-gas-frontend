@@ -48,6 +48,23 @@ import {
   getApiErrorMessage,
 } from '@/lib/api/client';
 
+import {
+  resendManagedInvitation,
+} from '@/lib/api/provisioning';
+
+import {
+  InviteBranchManagerDialog,
+} from '@/components/admin/provisioning/invite-branch-manager-dialog';
+
+import {
+  InvitationHandoffDialog,
+} from '@/components/admin/provisioning/invitation-handoff-dialog';
+
+import type {
+  ManagedInvitation,
+  ManagedInvitationHandoff,
+} from '@/types/provisioning';
+
 import type {
   Branch,
   CreateBranchInput,
@@ -260,6 +277,26 @@ function BranchCard({
                 ? `${branch.manager.firstName} ${branch.manager.lastName}`
                 : 'Not assigned'}
             </p>
+
+            {branch.manager ? (
+              <p
+                className={[
+                  'mt-1 text-[10px] font-bold uppercase tracking-[0.12em]',
+                  branch.manager.status ===
+                  'ACTIVE'
+                    ? 'text-emerald-600'
+                    : branch.manager.status ===
+                        'INACTIVE'
+                      ? 'text-amber-600'
+                      : 'text-rose-600',
+                ].join(' ')}
+              >
+                {branch.manager.status ===
+                'INACTIVE'
+                  ? 'Pending activation'
+                  : branch.manager.status}
+              </p>
+            ) : null}
           </div>
         </div>
       </div>
@@ -961,6 +998,19 @@ function BranchWorkspace({
     null,
   );
 
+  const [
+    inviteManagerOpen,
+    setInviteManagerOpen,
+  ] = useState(false);
+
+  const [
+    managerInvitation,
+    setManagerInvitation,
+  ] = useState<
+    ManagedInvitationHandoff
+      | null
+  >(null);
+
   const setField = (
     field:
       keyof FormState,
@@ -1101,6 +1151,107 @@ function BranchWorkspace({
       },
     });
 
+  const resendManagerMutation =
+    useMutation({
+      mutationFn:
+        async () => {
+          if (
+            !branch.manager
+          ) {
+            throw new Error(
+              'No Branch Manager is assigned.',
+            );
+          }
+
+          return resendManagedInvitation(
+            branch.manager.id,
+          );
+        },
+
+      onSuccess:
+        (invitation) => {
+          setErrorMessage(
+            null,
+          );
+
+          setSuccessMessage(
+            'A fresh Branch Manager invitation has been issued.',
+          );
+
+          setManagerInvitation(
+            invitation,
+          );
+        },
+
+      onError: (error) => {
+        setSuccessMessage(
+          null,
+        );
+
+        setErrorMessage(
+          getApiErrorMessage(
+            error,
+          ),
+        );
+      },
+    });
+
+  const handleManagerProvisioned =
+    async (
+      invitation:
+        ManagedInvitation,
+    ) => {
+      const updated:
+        Branch = {
+          ...branch,
+
+          manager: {
+            id:
+              invitation.account.id,
+
+            email:
+              invitation.account.email,
+
+            firstName:
+              invitation.account.firstName,
+
+            lastName:
+              invitation.account.lastName,
+
+            role:
+              'BRANCH_MANAGER',
+
+            status:
+              invitation.account.status,
+          },
+        };
+
+      setErrorMessage(
+        null,
+      );
+
+      setSuccessMessage(
+        invitation.replacedManagerId
+          ? 'Branch Manager replacement invitation created.'
+          : 'Branch Manager invitation created.',
+      );
+
+      setManagerInvitation(
+        invitation,
+      );
+
+      onBranchUpdated(
+        updated,
+      );
+
+      await queryClient.invalidateQueries({
+        queryKey: [
+          'admin',
+          'branches',
+        ],
+      });
+    };
+
   const submitEdit = (
     event:
       React.FormEvent<HTMLFormElement>,
@@ -1201,7 +1352,8 @@ function BranchWorkspace({
 
   const isBusy =
     editMutation.isPending ||
-    statusMutation.isPending;
+    statusMutation.isPending ||
+    resendManagerMutation.isPending;
 
   return (
     <motion.div
@@ -1715,8 +1867,30 @@ function BranchWorkspace({
                 </div>
 
                 <div className="rounded-[24px] border border-slate-200/80 bg-white p-5">
-                  <div className="flex size-10 items-center justify-center rounded-[14px] bg-violet-50 text-violet-600">
-                    <UserRound className="size-[18px]" />
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex size-10 items-center justify-center rounded-[14px] bg-violet-50 text-violet-600">
+                      <UserRound className="size-[18px]" />
+                    </div>
+
+                    {branch.manager ? (
+                      <span
+                        className={[
+                          'rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em]',
+                          branch.manager.status ===
+                          'ACTIVE'
+                            ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                            : branch.manager.status ===
+                                'INACTIVE'
+                              ? 'border-amber-200 bg-amber-50 text-amber-700'
+                              : 'border-rose-200 bg-rose-50 text-rose-700',
+                        ].join(' ')}
+                      >
+                        {branch.manager.status ===
+                        'INACTIVE'
+                          ? 'Pending activation'
+                          : branch.manager.status}
+                      </span>
+                    ) : null}
                   </div>
 
                   <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
@@ -1731,6 +1905,58 @@ function BranchWorkspace({
                     {branch.manager?.email ??
                       'No manager assigned'}
                   </p>
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={
+                        isBusy ||
+                        !branch.isActive
+                      }
+                      onClick={() =>
+                        setInviteManagerOpen(
+                          true,
+                        )
+                      }
+                      className="h-9 rounded-xl"
+                    >
+                      <UserRound className="size-4" />
+                      {branch.manager
+                        ? 'Replace manager'
+                        : 'Invite manager'}
+                    </Button>
+
+                    {branch.manager?.status ===
+                    'INACTIVE' ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={
+                          isBusy ||
+                          !branch.isActive
+                        }
+                        onClick={() =>
+                          resendManagerMutation.mutate()
+                        }
+                        className="h-9 rounded-xl border-amber-200 text-amber-700 hover:bg-amber-50"
+                      >
+                        {resendManagerMutation.isPending ? (
+                          <Loader2 className="size-4 animate-spin" />
+                        ) : (
+                          <RotateCcw className="size-4" />
+                        )}
+                        Resend invite
+                      </Button>
+                    ) : null}
+                  </div>
+
+                  {!branch.isActive ? (
+                    <p className="mt-3 text-xs leading-5 text-amber-700">
+                      Reactivate this branch before
+                      changing its manager.
+                    </p>
+                  ) : null}
                 </div>
               </section>
 
@@ -2023,6 +2249,39 @@ function BranchWorkspace({
           </motion.div>
         ) : null}
       </AnimatePresence>
+
+      <InviteBranchManagerDialog
+        branch={branch}
+        open={
+          inviteManagerOpen
+        }
+        onOpenChange={
+          setInviteManagerOpen
+        }
+        onProvisioned={
+          handleManagerProvisioned
+        }
+      />
+
+      <InvitationHandoffDialog
+        open={
+          Boolean(
+            managerInvitation,
+          )
+        }
+        invitation={
+          managerInvitation
+        }
+        onOpenChange={(
+          open,
+        ) => {
+          if (!open) {
+            setManagerInvitation(
+              null,
+            );
+          }
+        }}
+      />
     </motion.div>
   );
 }

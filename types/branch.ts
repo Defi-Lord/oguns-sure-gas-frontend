@@ -4,6 +4,10 @@ export interface BranchManager {
   firstName: string;
   lastName: string;
   role: 'BRANCH_MANAGER';
+  status:
+    | 'ACTIVE'
+    | 'INACTIVE'
+    | 'SUSPENDED';
 }
 
 export interface PublicBranch {

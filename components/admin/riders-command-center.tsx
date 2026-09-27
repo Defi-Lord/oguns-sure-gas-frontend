@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -15,6 +15,7 @@ import {
   ChevronRight,
   CircleAlert,
   Clock3,
+  Loader2,
   Mail,
   MapPin,
   Pencil,
@@ -27,11 +28,29 @@ import {
   ShieldCheck,
   Truck,
   UserRound,
+  UserRoundPlus,
   UsersRound,
   X,
 } from 'lucide-react';
 
 import { api, getApiErrorMessage } from '@/lib/api/client';
+
+import {
+  resendManagedInvitation,
+} from '@/lib/api/provisioning';
+
+import {
+  InviteRiderDialog,
+} from '@/components/admin/provisioning/invite-rider-dialog';
+
+import {
+  InvitationHandoffDialog,
+} from '@/components/admin/provisioning/invitation-handoff-dialog';
+
+import type {
+  ManagedInvitation,
+  ManagedInvitationHandoff,
+} from '@/types/provisioning';
 import type {
   Rider,
   RiderBranch,
@@ -291,6 +310,19 @@ export function RidersCommandCenter() {
   const [availabilityMessage, setAvailabilityMessage] =
     useState<string | null>(null);
 
+  const [
+    inviteRiderOpen,
+    setInviteRiderOpen,
+  ] = useState(false);
+
+  const [
+    riderInvitation,
+    setRiderInvitation,
+  ] = useState<
+    ManagedInvitationHandoff
+      | null
+  >(null);
+
   const ridersQuery = useQuery({
     queryKey: ['admin-riders'],
 
@@ -388,6 +420,51 @@ export function RidersCommandCenter() {
     },
   });
 
+  const resendInviteMutation =
+    useMutation({
+      mutationFn:
+        resendManagedInvitation,
+
+      onSuccess:
+        (invitation) => {
+          setProfileMessage(
+            null,
+          );
+
+          setAvailabilityMessage(
+            null,
+          );
+
+          setRiderInvitation(
+            invitation,
+          );
+        },
+
+      onError: (error) => {
+        setProfileMessage(
+          getApiErrorMessage(
+            error,
+          ),
+        );
+      },
+    });
+
+  const handleRiderProvisioned =
+    async (
+      invitation:
+        ManagedInvitation,
+    ) => {
+      setRiderInvitation(
+        invitation,
+      );
+
+      await queryClient.invalidateQueries({
+        queryKey: [
+          'admin-riders',
+        ],
+      });
+    };
+
   const riders = ridersQuery.data ?? [];
 
   const branchOptions =
@@ -403,20 +480,45 @@ export function RidersCommandCenter() {
   );
 
   useEffect(() => {
-    if (!selectedRider) {
-      setIsEditingProfile(false);
-      setProfileMessage(null);
-      setAvailabilityMessage(null);
-      return;
-    }
+    const frame =
+      window.requestAnimationFrame(
+        () => {
+          if (!selectedRider) {
+            setIsEditingProfile(
+              false,
+            );
 
-    setProfileForm({
-      branchId: selectedRider.branchId ?? '',
-      vehicleType:
-        selectedRider.vehicleType ?? '',
-      vehicleNumber:
-        selectedRider.vehicleNumber ?? '',
-    });
+            setProfileMessage(
+              null,
+            );
+
+            setAvailabilityMessage(
+              null,
+            );
+
+            return;
+          }
+
+          setProfileForm({
+            branchId:
+              selectedRider.branchId ??
+              '',
+
+            vehicleType:
+              selectedRider.vehicleType ??
+              '',
+
+            vehicleNumber:
+              selectedRider.vehicleNumber ??
+              '',
+          });
+        },
+      );
+
+    return () =>
+      window.cancelAnimationFrame(
+        frame,
+      );
   }, [selectedRider]);
 
   const saveRiderProfile = () => {
@@ -628,23 +730,41 @@ export function RidersCommandCenter() {
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={() =>
-                void ridersQuery.refetch()
-              }
-              disabled={ridersQuery.isFetching}
-              className="inline-flex w-fit items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-60"
-            >
-              <RefreshCw
-                className={`h-4 w-4 ${
-                  ridersQuery.isFetching
-                    ? 'animate-spin'
-                    : ''
-                }`}
-              />
-              Refresh
-            </button>
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() =>
+                  setInviteRiderOpen(
+                    true,
+                  )
+                }
+                disabled={
+                  branchesQuery.isLoading
+                }
+                className="inline-flex w-fit items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-60"
+              >
+                <UserRoundPlus className="h-4 w-4" />
+                Invite rider
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  void ridersQuery.refetch()
+                }
+                disabled={ridersQuery.isFetching}
+                className="inline-flex w-fit items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-60"
+              >
+                <RefreshCw
+                  className={`h-4 w-4 ${
+                    ridersQuery.isFetching
+                      ? 'animate-spin'
+                      : ''
+                  }`}
+                />
+                Refresh
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1022,6 +1142,41 @@ export function RidersCommandCenter() {
           </div>
         </div>
       </section>
+
+      <InviteRiderDialog
+        open={
+          inviteRiderOpen
+        }
+        onOpenChange={
+          setInviteRiderOpen
+        }
+        branches={
+          branchOptions
+        }
+        onProvisioned={
+          handleRiderProvisioned
+        }
+      />
+
+      <InvitationHandoffDialog
+        open={
+          Boolean(
+            riderInvitation,
+          )
+        }
+        invitation={
+          riderInvitation
+        }
+        onOpenChange={(
+          open,
+        ) => {
+          if (!open) {
+            setRiderInvitation(
+              null,
+            );
+          }
+        }}
+      />
 
       <AnimatePresence>
         {selectedRider ? (
@@ -1557,6 +1712,29 @@ export function RidersCommandCenter() {
                       />
                     </div>
                   </div>
+
+                  {selectedRider.user.status ===
+                  'INACTIVE' ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        resendInviteMutation.mutate(
+                          selectedRider.user.id,
+                        )
+                      }
+                      disabled={
+                        resendInviteMutation.isPending
+                      }
+                      className="mt-4 inline-flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2 text-xs font-bold text-amber-700 transition hover:bg-amber-100 disabled:opacity-60"
+                    >
+                      {resendInviteMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-4 w-4" />
+                      )}
+                      Resend activation invite
+                    </button>
+                  ) : null}
                 </div>
 
                 <div className="rounded-[24px] border border-slate-200 bg-white p-5">
