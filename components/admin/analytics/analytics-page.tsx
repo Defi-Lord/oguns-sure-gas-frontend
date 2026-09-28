@@ -44,6 +44,10 @@ import {
   getApiErrorMessage,
 } from '@/lib/api/client';
 
+import {
+  useAuthStore,
+} from '@/stores/auth-store';
+
 import type {
   AnalyticsKind,
   AnalyticsPayloadMap,
@@ -1744,6 +1748,20 @@ function AnalyticsBody({
 }
 
 export function AnalyticsPage() {
+  const user =
+    useAuthStore(
+      (state) =>
+        state.user,
+    );
+
+  const isBranchManager =
+    user?.role ===
+    'BRANCH_MANAGER';
+
+  const managedBranch =
+    user?.managedBranch ??
+    null;
+
   const [
     kind,
     setKind,
@@ -1810,14 +1828,24 @@ export function AnalyticsPage() {
 
       staleTime:
         60_000,
+
+      enabled:
+        !isBranchManager,
     });
+
+  const effectiveBranchId =
+    isBranchManager
+      ? managedBranch?.id ??
+        ''
+      : branchId;
 
   const filters =
     useMemo(
       () => ({
-        ...(branchId
+        ...(effectiveBranchId
           ? {
-              branchId,
+              branchId:
+                effectiveBranchId,
             }
           : {}),
 
@@ -1837,7 +1865,7 @@ export function AnalyticsPage() {
           : {}),
       }),
       [
-        branchId,
+        effectiveBranchId,
         definition
           .dateAware,
         fromDate,
@@ -1861,7 +1889,13 @@ export function AnalyticsPage() {
         ),
 
       enabled:
-        !dateError,
+        !dateError &&
+        (
+          !isBranchManager ||
+          Boolean(
+            managedBranch?.id,
+          )
+        ),
     });
 
   useEffect(
@@ -1878,20 +1912,22 @@ export function AnalyticsPage() {
   );
 
   const selectedBranch =
-    branchesQuery.data
-      ?.find(
-        (
-          branch,
-        ) =>
-          branch.id ===
-          (
-            analyticsQuery
-              .data
-              ?.scope
-              .branchId ??
-            branchId
-          ),
-      );
+    isBranchManager
+      ? managedBranch
+      : branchesQuery.data
+          ?.find(
+            (
+              branch,
+            ) =>
+              branch.id ===
+              (
+                analyticsQuery
+                  .data
+                  ?.scope
+                  .branchId ??
+                branchId
+              ),
+          );
 
   const error =
     analyticsQuery.error
@@ -1915,8 +1951,9 @@ export function AnalyticsPage() {
             </h1>
 
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 md:text-base">
-              Explore company-wide and branch-level performance across sales,
-              orders, products, inventory, delivery, payments and campaigns.
+              {isBranchManager
+                ? `Explore live performance for ${managedBranch?.name ?? 'your managed branch'} across sales, orders, products, inventory, delivery, payments and campaigns.`
+                : 'Explore company-wide and branch-level performance across sales, orders, products, inventory, delivery, payments and campaigns.'}
             </p>
           </div>
 
@@ -2027,50 +2064,59 @@ export function AnalyticsPage() {
               Branch
             </span>
 
-            <select
-              value={
-                branchId
-              }
-              onChange={(
-                event,
-              ) =>
-                setBranchId(
-                  event.target
-                    .value,
-                )
-              }
-              className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 outline-none focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100"
-            >
-              <option value="">
-                All branches
-              </option>
+            {isBranchManager ? (
+              <div className="flex h-11 w-full items-center rounded-2xl border border-emerald-200 bg-emerald-50 px-4 text-sm font-semibold text-emerald-800">
+                {managedBranch?.name ??
+                  'Managed branch'}{' '}
+                {managedBranch?.code
+                  ? `(${managedBranch.code})`
+                  : ''}
+              </div>
+            ) : (
+              <select
+                value={
+                  branchId
+                }
+                onChange={(
+                  event,
+                ) =>
+                  setBranchId(
+                    event.target
+                      .value,
+                  )
+                }
+                className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 outline-none focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+              >
+                <option value="">
+                  All branches
+                </option>
 
-              {(
-                branchesQuery
-                  .data ??
-                []
-              ).map(
-                (
-                  branch,
-                ) => (
-                  <option
-                    key={
-                      branch.id
-                    }
-                    value={
-                      branch.id
-                    }
-                  >
-                    {
-                      branch.name
-                    }{' '}
-                    ({branch.code})
-                  </option>
-                ),
-              )}
-            </select>
+                {(
+                  branchesQuery
+                    .data ??
+                  []
+                ).map(
+                  (
+                    branch,
+                  ) => (
+                    <option
+                      key={
+                        branch.id
+                      }
+                      value={
+                        branch.id
+                      }
+                    >
+                      {
+                        branch.name
+                      }{' '}
+                      ({branch.code})
+                    </option>
+                  ),
+                )}
+              </select>
+            )}
           </label>
-
           <label className="space-y-2">
             <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
               From
@@ -2130,7 +2176,11 @@ export function AnalyticsPage() {
             {
               selectedBranch
                 ?.name ??
-              'Company-wide'
+              (
+                isBranchManager
+                  ? 'Managed branch'
+                  : 'Company-wide'
+              )
             }
           </span>
 

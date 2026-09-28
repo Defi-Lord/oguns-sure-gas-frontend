@@ -186,8 +186,19 @@ export function AdminShell({
     }
 
     const allowedBranchManagerRoutes = [
+      '/admin/dashboard',
+      '/admin/orders',
       '/admin/products',
       '/admin/inventory',
+      '/admin/deliveries',
+      '/admin/riders',
+      '/admin/staff',
+      '/admin/notifications',
+      '/admin/reports',
+      '/admin/analytics',
+      '/admin/finance',
+      '/admin/audit',
+      '/admin/settings',
     ];
 
     const isAllowed =
@@ -201,7 +212,7 @@ export function AdminShell({
 
     if (!isAllowed) {
       router.replace(
-        '/admin/products',
+        '/admin/dashboard',
       );
     }
   }, [
@@ -228,9 +239,20 @@ export function AdminShell({
   ]);
 
   useEffect(() => {
-    setMobileSidebarOpen(
-      false,
-    );
+    const frameId =
+      window.requestAnimationFrame(
+        () => {
+          setMobileSidebarOpen(
+            false,
+          );
+        },
+      );
+
+    return () => {
+      window.cancelAnimationFrame(
+        frameId,
+      );
+    };
   }, [pathname]);
 
   if (

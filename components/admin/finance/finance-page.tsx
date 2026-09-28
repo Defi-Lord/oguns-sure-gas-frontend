@@ -39,6 +39,10 @@ import {
 } from '@/lib/api/branches';
 
 import {
+  getAnalytics,
+} from '@/lib/api/analytics';
+
+import {
   activatePayoutPolicy,
   createPayoutPolicy,
   disablePayoutRecipient,
@@ -63,6 +67,24 @@ import {
 import {
   getApiErrorMessage,
 } from '@/lib/api/client';
+
+import {
+  useAuthStore,
+} from '@/stores/auth-store';
+
+import type {
+  OverviewAnalytics,
+  PaymentAnalytics,
+} from '@/types/analytics';
+
+type BranchFinanceOverview =
+  OverviewAnalytics & {
+    revenue:
+      OverviewAnalytics['revenue'] & {
+        platformFeeRevenue:
+          number;
+      };
+  };
 
 import type {
   CreatePayoutPolicyInput,
@@ -427,7 +449,557 @@ const financeTabs: Array<{
   },
 ];
 
-export function FinancePage() {
+const financeTodayInput =
+  (): string => {
+    const now =
+      new Date();
+
+    const offset =
+      now.getTimezoneOffset();
+
+    return new Date(
+      now.getTime() -
+        offset * 60_000,
+    )
+      .toISOString()
+      .slice(
+        0,
+        10,
+      );
+  };
+
+const financeDaysAgoInput =
+  (
+    days:
+      number,
+  ): string => {
+    const date =
+      new Date();
+
+    date.setDate(
+      date.getDate() -
+        days,
+    );
+
+    const offset =
+      date.getTimezoneOffset();
+
+    return new Date(
+      date.getTime() -
+        offset * 60_000,
+    )
+      .toISOString()
+      .slice(
+        0,
+        10,
+      );
+  };
+
+const financeStartOfDayIso =
+  (
+    value:
+      string,
+  ): string =>
+    new Date(
+      `${value}T00:00:00`,
+    ).toISOString();
+
+const financeEndOfDayIso =
+  (
+    value:
+      string,
+  ): string =>
+    new Date(
+      `${value}T23:59:59.999`,
+    ).toISOString();
+
+function FinanceCountList({
+  title,
+  counts,
+}: {
+  title: string;
+  counts:
+    Record<
+      string,
+      number
+    >;
+}) {
+  const entries =
+    Object.entries(
+      counts,
+    ).sort(
+      (
+        a,
+        b,
+      ) =>
+        b[1] -
+        a[1],
+    );
+
+  return (
+    <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_14px_35px_rgba(15,23,42,0.04)]">
+      <h3 className="text-sm font-semibold text-slate-950">
+        {title}
+      </h3>
+
+      <div className="mt-4 space-y-2">
+        {entries.length ? (
+          entries.map(
+            (
+              [
+                key,
+                value,
+              ],
+            ) => (
+              <div
+                key={key}
+                className="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2.5"
+              >
+                <span className="text-xs font-medium text-slate-600">
+                  {humanize(
+                    key,
+                  )}
+                </span>
+
+                <span className="text-sm font-semibold text-slate-950">
+                  {
+                    value
+                  }
+                </span>
+              </div>
+            ),
+          )
+        ) : (
+          <p className="text-xs text-slate-400">
+            No records in this period.
+          </p>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function BranchManagerFinancePage() {
+  const user =
+    useAuthStore(
+      (state) =>
+        state.user,
+    );
+
+  const managedBranch =
+    user?.managedBranch ??
+    null;
+
+  const [
+    fromDate,
+    setFromDate,
+  ] =
+    useState(
+      financeDaysAgoInput(
+        29,
+      ),
+    );
+
+  const [
+    toDate,
+    setToDate,
+  ] =
+    useState(
+      financeTodayInput(),
+    );
+
+  const dateError =
+    fromDate >
+    toDate
+      ? 'The start date cannot be after the end date.'
+      : null;
+
+  const filters =
+    useMemo(
+      () => ({
+        from:
+          financeStartOfDayIso(
+            fromDate,
+          ),
+        to:
+          financeEndOfDayIso(
+            toDate,
+          ),
+      }),
+      [
+        fromDate,
+        toDate,
+      ],
+    );
+
+  const enabled =
+    Boolean(
+      managedBranch?.id,
+    ) &&
+    !dateError;
+
+  const overviewQuery =
+    useQuery({
+      queryKey: [
+        'branch-manager',
+        'finance',
+        'overview',
+        filters,
+      ],
+
+      queryFn: () =>
+        getAnalytics(
+          'overview',
+          filters,
+        ),
+
+      enabled,
+      staleTime:
+        20_000,
+    });
+
+  const paymentsQuery =
+    useQuery({
+      queryKey: [
+        'branch-manager',
+        'finance',
+        'payments',
+        filters,
+      ],
+
+      queryFn: () =>
+        getAnalytics(
+          'payments',
+          filters,
+        ),
+
+      enabled,
+      staleTime:
+        20_000,
+    });
+
+  const overview =
+    overviewQuery.data as
+      | BranchFinanceOverview
+      | undefined;
+
+  const payments =
+    paymentsQuery.data as
+      | PaymentAnalytics
+      | undefined;
+
+  const error =
+    overviewQuery.error ??
+    paymentsQuery.error;
+
+  const isLoading =
+    overviewQuery.isLoading ||
+    paymentsQuery.isLoading;
+
+  const isRefreshing =
+    overviewQuery.isFetching ||
+    paymentsQuery.isFetching;
+
+  const refresh =
+    () => {
+      void Promise.all([
+        overviewQuery.refetch(),
+        paymentsQuery.refetch(),
+      ]);
+    };
+
+  if (
+    !managedBranch
+  ) {
+    return (
+      <section className="rounded-[28px] border border-amber-200 bg-amber-50 p-6">
+        <h1 className="font-serif text-2xl font-semibold text-slate-950">
+          Branch finance unavailable
+        </h1>
+
+        <p className="mt-2 text-sm leading-6 text-amber-800">
+          This Branch Manager account is not assigned to a branch.
+        </p>
+      </section>
+    );
+  }
+
+  return (
+    <div className="space-y-5 pb-8">
+      <section className="overflow-hidden rounded-[30px] border border-emerald-100 bg-gradient-to-br from-white via-emerald-50/70 to-cyan-50 p-6 shadow-[0_20px_60px_rgba(15,118,110,0.07)] sm:p-8">
+        <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/80 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.15em] text-emerald-700">
+              <Landmark className="size-4" />
+              Branch finance
+            </div>
+
+            <h1 className="mt-4 font-serif text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+              {managedBranch.name} finance
+            </h1>
+
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+              Audit paid revenue, order value, platform fees, delivery charges and payment activity for your branch only. Provider transfers, payout destinations and global payout policy remain under Super Admin control.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={
+              refresh
+            }
+            disabled={
+              isRefreshing
+            }
+            className="inline-flex h-11 w-fit items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-emerald-200 hover:text-emerald-700 disabled:opacity-60"
+          >
+            {isRefreshing ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <RefreshCw className="size-4" />
+            )}
+            Refresh finance
+          </button>
+        </div>
+      </section>
+
+      <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <label>
+            <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+              Branch
+            </span>
+
+            <div className="mt-2 flex h-11 items-center rounded-2xl border border-emerald-200 bg-emerald-50 px-4 text-sm font-semibold text-emerald-800">
+              {managedBranch.name} ({managedBranch.code})
+            </div>
+          </label>
+
+          <label>
+            <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+              From
+            </span>
+
+            <input
+              type="date"
+              value={
+                fromDate
+              }
+              onChange={(
+                event,
+              ) =>
+                setFromDate(
+                  event.target.value,
+                )
+              }
+              className="mt-2 h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 outline-none focus:border-emerald-400 focus:bg-white"
+            />
+          </label>
+
+          <label>
+            <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+              To
+            </span>
+
+            <input
+              type="date"
+              value={
+                toDate
+              }
+              onChange={(
+                event,
+              ) =>
+                setToDate(
+                  event.target.value,
+                )
+              }
+              className="mt-2 h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 outline-none focus:border-emerald-400 focus:bg-white"
+            />
+          </label>
+        </div>
+
+        {dateError ? (
+          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
+            {dateError}
+          </div>
+        ) : null}
+      </section>
+
+      {error ? (
+        <ErrorState
+          message={
+            getApiErrorMessage(
+              error,
+            )
+          }
+          onRetry={
+            refresh
+          }
+        />
+      ) : isLoading ? (
+        <LoadingState label="Loading branch finance..." />
+      ) : (
+        <>
+          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <MetricCard
+              label="Paid revenue"
+              value={
+                formatMoney(
+                  overview
+                    ?.revenue
+                    .paidRevenue,
+                )
+              }
+              detail={`${overview?.revenue.paidOrderCount ?? 0} paid branch orders`}
+              icon={
+                Banknote
+              }
+            />
+
+            <MetricCard
+              label="Gross order value"
+              value={
+                formatMoney(
+                  overview
+                    ?.orders
+                    .grossOrderValue,
+                )
+              }
+              detail={`${overview?.orders.total ?? 0} orders in scope`}
+              icon={
+                CreditCard
+              }
+            />
+
+            <MetricCard
+              label="Platform fee revenue"
+              value={
+                formatMoney(
+                  overview
+                    ?.revenue
+                    .platformFeeRevenue,
+                )
+              }
+              detail="Platform fees attached to paid branch orders."
+              icon={
+                Landmark
+              }
+            />
+
+            <MetricCard
+              label="Rider tips"
+              value={
+                formatMoney(
+                  payments
+                    ?.tipPaymentRevenue,
+                )
+              }
+              detail="Paid rider-tip payments attributed to this branch."
+              icon={
+                Sparkles
+              }
+            />
+          </section>
+
+          <section className="grid gap-4 lg:grid-cols-3">
+            <FinanceCountList
+              title="Payment status"
+              counts={
+                payments
+                  ?.statusCounts ??
+                {}
+              }
+            />
+
+            <FinanceCountList
+              title="Payment methods"
+              counts={
+                payments
+                  ?.methodCounts ??
+                {}
+              }
+            />
+
+            <FinanceCountList
+              title="Payment types"
+              counts={
+                payments
+                  ?.paymentTypeCounts ??
+                {}
+              }
+            />
+          </section>
+
+          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <MetricCard
+              label="Order payments"
+              value={
+                formatMoney(
+                  payments
+                    ?.orderPaymentRevenue,
+                )
+              }
+              detail={`${payments?.totalPayments ?? 0} total payment records`}
+              icon={
+                CreditCard
+              }
+            />
+
+            <MetricCard
+              label="Delivery fees"
+              value={
+                formatMoney(
+                  overview
+                    ?.orders
+                    .deliveryFees,
+                )
+              }
+              detail="Delivery charges across orders in this period."
+              icon={
+                Banknote
+              }
+            />
+
+            <MetricCard
+              label="Cross-branch fees"
+              value={
+                formatMoney(
+                  overview
+                    ?.orders
+                    .crossBranchFees,
+                )
+              }
+              detail="Cross-branch charges attributed to the branch."
+              icon={
+                Landmark
+              }
+            />
+
+            <MetricCard
+              label="Discounts"
+              value={
+                formatMoney(
+                  overview
+                    ?.orders
+                    .discounts,
+                )
+              }
+              detail="Total discounts applied to branch orders."
+              icon={
+                Sparkles
+              }
+            />
+          </section>
+
+          <section className="rounded-[24px] border border-sky-100 bg-sky-50 p-5 text-sm leading-6 text-sky-800">
+            Detailed transaction-level payment records remain available in the Reports workspace. This Branch Manager finance view is intentionally read-only for provider transfers and global payout policy.
+          </section>
+        </>
+      )}
+    </div>
+  );
+}
+function SuperAdminFinancePage() {
   const queryClient =
     useQueryClient();
 
@@ -3289,5 +3861,26 @@ function Modal({
         </div>
       </div>
     </div>
+  );
+}
+
+export function FinancePage() {
+  const user =
+    useAuthStore(
+      (state) =>
+        state.user,
+    );
+
+  if (
+    user?.role ===
+    'BRANCH_MANAGER'
+  ) {
+    return (
+      <BranchManagerFinancePage />
+    );
+  }
+
+  return (
+    <SuperAdminFinancePage />
   );
 }

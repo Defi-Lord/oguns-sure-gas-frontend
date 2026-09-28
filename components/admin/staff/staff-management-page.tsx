@@ -454,6 +454,45 @@ export function StaffManagementPage() {
           return activeBranches;
         }
 
+        const managedBranch =
+          authUser.managedBranch;
+
+        if (
+          managedBranch
+        ) {
+          if (
+            !managedBranch.isActive
+          ) {
+            return [];
+          }
+
+          const branchFromApi =
+            activeBranches.find(
+              (
+                branch,
+              ) =>
+                branch.id ===
+                managedBranch.id,
+            );
+
+          return [
+            branchFromApi ?? {
+              id:
+                managedBranch.id,
+              name:
+                managedBranch.name,
+              code:
+                managedBranch.code,
+              isActive:
+                managedBranch.isActive,
+            },
+          ];
+        }
+
+        /*
+         * Legacy fallback only:
+         * older auth payloads may not contain managedBranch.
+         */
         const explicitManaged =
           activeBranches.filter(
             (
@@ -470,14 +509,6 @@ export function StaffManagementPage() {
           return explicitManaged;
         }
 
-        /*
-         * Fallback for APIs where the public branch serializer
-         * does not expose manager ownership.
-         *
-         * /staff is already branch-scoped by the backend for a
-         * BRANCH_MANAGER, so existing staff records can safely
-         * identify visible managed branches.
-         */
         const branchIds =
           new Set(
             staffMembers.map(
@@ -506,15 +537,10 @@ export function StaffManagementPage() {
         }
 
         /*
-         * Final fallback:
-         *
-         * keep active branches visible so a manager with zero
-         * existing staff is not locked out of onboarding.
-         *
-         * The backend remains the financial/security authority
-         * and rejects invitations for unmanaged branches.
+         * Never expose every active branch to a Branch Manager.
+         * An unresolved managed branch fails closed.
          */
-        return activeBranches;
+        return [];
       },
       [
         authUser,

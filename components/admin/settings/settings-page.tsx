@@ -41,6 +41,7 @@ import {
 } from 'lucide-react';
 
 import {
+  getManagementBranch,
   getManagementBranches,
   updateBranch,
 } from '@/lib/api/branches';
@@ -62,6 +63,10 @@ import {
 import {
   useAuthStore,
 } from '@/stores/auth-store';
+
+import {
+  BranchManagerBranchSettings,
+} from '@/components/admin/branch-manager/branch-manager-branch-settings';
 
 import type {
   Branch,
@@ -3559,7 +3564,7 @@ function PlatformManagement({
   );
 }
 
-export function SettingsPage() {
+function SuperAdminSettingsPage() {
   const [
     section,
     setSection,
@@ -3862,5 +3867,240 @@ export function SettingsPage() {
         />
       )}
     </div>
+  );
+}
+
+function BranchManagerSettingsPage() {
+  const user =
+    useAuthStore(
+      (state) =>
+        state.user,
+    );
+
+  const managedBranch =
+    user?.managedBranch ??
+    null;
+
+  const [
+    section,
+    setSection,
+  ] =
+    useState<
+      | 'ACCOUNT'
+      | 'BRANCH'
+      | 'DELIVERY'
+    >(
+      'ACCOUNT',
+    );
+
+  const [
+    notice,
+    setNotice,
+  ] =
+    useState<
+      string | null
+    >(null);
+
+  const profileQuery =
+    useQuery({
+      queryKey: [
+        'branch-manager',
+        'settings',
+        'profile',
+      ],
+      queryFn:
+        getSettingsProfile,
+    });
+
+  const managedBranchQuery =
+    useQuery({
+      queryKey: [
+        'branch-manager',
+        'settings',
+        'managed-branch',
+        managedBranch?.id,
+      ],
+
+      queryFn: () =>
+        getManagementBranch(
+          managedBranch!.id,
+        ),
+
+      enabled:
+        Boolean(
+          managedBranch?.id,
+        ),
+
+      staleTime:
+        30_000,
+    });
+
+  const branches =
+    useMemo<
+      Branch[]
+    >(
+      () =>
+        managedBranchQuery.data
+          ? [
+              managedBranchQuery.data,
+            ]
+          : [],
+      [
+        managedBranchQuery
+          .data,
+      ],
+    );
+
+  const profileError =
+    profileQuery.error
+      ? getApiErrorMessage(
+          profileQuery.error,
+        )
+      : null;
+
+  const branchError =
+    managedBranchQuery.error
+      ? getApiErrorMessage(
+          managedBranchQuery.error,
+        )
+      : null;
+
+  if (!managedBranch) {
+    return (
+      <section className="rounded-[28px] border border-amber-200 bg-amber-50 p-6">
+        <h1 className="text-2xl font-semibold text-slate-950">
+          Branch settings unavailable
+        </h1>
+        <p className="mt-2 text-sm leading-6 text-amber-800">
+          This Branch Manager account is not assigned to a branch.
+        </p>
+      </section>
+    );
+  }
+
+  const displayBranch =
+    managedBranchQuery.data;
+
+  return (
+    <div className="space-y-6">
+      <section className="overflow-hidden rounded-[2rem] border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-cyan-50 p-6 shadow-sm md:p-8">
+        <div className="max-w-3xl">
+          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/80 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">
+            <Settings2 className="size-4" />
+            Branch settings
+          </div>
+
+          <h1 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">
+            {displayBranch?.name ?? managedBranch.name}
+          </h1>
+
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 md:text-base">
+            Manage your account, own-branch operating information and delivery pricing. Branch code, activation, manager assignment, platform settings and payout execution remain protected Super Admin controls.
+          </p>
+
+          <div className="mt-4 inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800">
+            {displayBranch?.name ?? managedBranch.name}{' '}
+            ({managedBranch.code})
+          </div>
+        </div>
+      </section>
+
+      {notice ? (
+        <Notice
+          message={notice}
+          onClose={() => setNotice(null)}
+        />
+      ) : null}
+
+      <section className="grid gap-3 sm:grid-cols-3">
+        <SectionTab
+          active={section === 'ACCOUNT'}
+          icon={<UserRound className="size-5" />}
+          label="My Account"
+          description="Your Branch Manager profile and contact details."
+          onClick={() => {
+            setSection('ACCOUNT');
+            setNotice(null);
+          }}
+        />
+
+        <SectionTab
+          active={section === 'BRANCH'}
+          icon={<Building2 className="size-5" />}
+          label="Own Branch"
+          description="Business identity, location, contact and reference banking."
+          onClick={() => {
+            setSection('BRANCH');
+            setNotice(null);
+          }}
+        />
+
+        <SectionTab
+          active={section === 'DELIVERY'}
+          icon={<Truck className="size-5" />}
+          label="Delivery & Fees"
+          description="Own-branch delivery zones and checkout delivery pricing."
+          onClick={() => {
+            setSection('DELIVERY');
+            setNotice(null);
+          }}
+        />
+      </section>
+
+      {section === 'ACCOUNT' ? (
+        <AccountSettings
+          profile={profileQuery.data ?? null}
+          isLoading={profileQuery.isLoading}
+          error={profileError}
+          onSaved={() =>
+            setNotice(
+              'Branch Manager profile updated successfully.',
+            )
+          }
+        />
+      ) : null}
+
+      {section === 'BRANCH' ? (
+        <BranchManagerBranchSettings
+          branch={displayBranch ?? null}
+          isLoading={managedBranchQuery.isLoading}
+          error={branchError}
+          onSaved={setNotice}
+        />
+      ) : null}
+
+      {section === 'DELIVERY' ? (
+        <DeliverySettings
+          branches={branches}
+          selectedBranchId={managedBranch.id}
+          onSelectedBranchId={() => {
+            // Branch Manager scope is immutable in this workspace.
+          }}
+          branchLoading={managedBranchQuery.isLoading}
+          branchError={branchError}
+          onSaved={setNotice}
+        />
+      ) : null}
+    </div>
+  );
+}
+export function SettingsPage() {
+  const user =
+    useAuthStore(
+      (state) =>
+        state.user,
+    );
+
+  if (
+    user?.role ===
+    'BRANCH_MANAGER'
+  ) {
+    return (
+      <BranchManagerSettingsPage />
+    );
+  }
+
+  return (
+    <SuperAdminSettingsPage />
   );
 }

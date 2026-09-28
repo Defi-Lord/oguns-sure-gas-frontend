@@ -1,7 +1,7 @@
 'use client';
 
 import {
-  useEffect,
+  useSyncExternalStore,
   useMemo,
   useState,
 } from 'react';
@@ -94,6 +94,56 @@ const TYPE_LABEL: Record<
   SYSTEM: 'System',
   PROMOTION: 'Promotion',
 };
+
+// Mutable connection state belongs to this external store, outside React render.
+function createNotificationConnectionStore(
+  accessToken: string | null | undefined,
+  onNotification: (notification: NotificationRecord) => void,
+) {
+  let connected = false;
+
+  return {
+    getSnapshot: () => connected,
+    getServerSnapshot: () => false,
+    subscribe: (onStoreChange: () => void) => {
+      connected = false;
+      if (!accessToken) {
+        return () => {};
+      }
+
+      let active = true;
+      let socket: ReturnType<typeof createNotificationSocket> | null = null;
+
+      const updateConnection = (next: boolean) => {
+        if (!active || connected === next) return;
+        connected = next;
+        onStoreChange();
+      };
+
+      try {
+        socket = createNotificationSocket(accessToken);
+        socket.on('notification:ready', () => updateConnection(true));
+        socket.on('connect_error', () => updateConnection(false));
+        socket.on('disconnect', () => updateConnection(false));
+        socket.on('notification:new', (notification) => {
+          if (!active) return;
+          onNotification(notification);
+        });
+      } catch {
+        // Polling remains enabled when socket setup is unavailable.
+        active = false;
+        connected = false;
+        socket?.disconnect();
+      }
+
+      return () => {
+        active = false;
+        connected = false;
+        socket?.disconnect();
+      };
+    },
+  };
+}
 
 const TYPE_CLASS: Record<
   NotificationType,
@@ -389,12 +439,6 @@ export function NotificationsPage() {
     useState(false);
 
   const [
-    realtimeConnected,
-    setRealtimeConnected,
-  ] =
-    useState(false);
-
-  const [
     notice,
     setNotice,
   ] =
@@ -409,6 +453,22 @@ export function NotificationsPage() {
     useState<
       string | null
     >(null);
+
+  const realtimeStore = useMemo(
+    () => createNotificationConnectionStore(accessToken, (notification) => {
+      setNotice(
+        `New ${TYPE_LABEL[notification.type].toLowerCase()} notification received.`,
+      );
+      void queryClient.invalidateQueries({ queryKey: QUERY_ROOT });
+    }),
+    [accessToken, queryClient],
+  );
+
+  const realtimeConnected = useSyncExternalStore(
+    realtimeStore.subscribe,
+    realtimeStore.getSnapshot,
+    realtimeStore.getServerSnapshot,
+  );
 
   const serverFilters =
     useMemo<
@@ -475,9 +535,10 @@ export function NotificationsPage() {
           : 30_000,
     });
 
-  const notifications =
-    notificationsQuery.data ??
-    [];
+  const notifications = useMemo(
+    () => notificationsQuery.data ?? [],
+    [notificationsQuery.data],
+  );
 
   const unreadCount =
     unreadCountQuery.data ??
@@ -569,87 +630,6 @@ export function NotificationsPage() {
             QUERY_ROOT,
         });
     };
-
-  useEffect(
-    () => {
-      if (!accessToken) {
-        setRealtimeConnected(
-          false,
-        );
-        return;
-      }
-
-      let socket:
-        ReturnType<
-          typeof createNotificationSocket
-        > | null = null;
-
-      try {
-        socket =
-          createNotificationSocket(
-            accessToken,
-          );
-
-        socket.on(
-          'notification:ready',
-          () => {
-            setRealtimeConnected(
-              true,
-            );
-          },
-        );
-
-        socket.on(
-          'notification:new',
-          (
-            notification,
-          ) => {
-            setNotice(
-              `New ${TYPE_LABEL[
-                notification.type
-              ].toLowerCase()} notification received.`,
-            );
-
-            void queryClient
-              .invalidateQueries({
-                queryKey:
-                  QUERY_ROOT,
-              });
-          },
-        );
-
-        socket.on(
-          'connect_error',
-          () => {
-            setRealtimeConnected(
-              false,
-            );
-          },
-        );
-
-        socket.on(
-          'disconnect',
-          () => {
-            setRealtimeConnected(
-              false,
-            );
-          },
-        );
-      } catch {
-        setRealtimeConnected(
-          false,
-        );
-      }
-
-      return () => {
-        socket?.disconnect();
-      };
-    },
-    [
-      accessToken,
-      queryClient,
-    ],
-  );
 
   const markOneMutation =
     useMutation({

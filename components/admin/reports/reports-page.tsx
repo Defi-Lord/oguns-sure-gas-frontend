@@ -46,6 +46,10 @@ import {
   getReport,
 } from '@/lib/api/reports';
 
+import {
+  useAuthStore,
+} from '@/stores/auth-store';
+
 import type {
   ReportFilters,
   ReportKind,
@@ -1000,6 +1004,20 @@ const csvEscape =
     )}"`;
 
 export function ReportsPage() {
+  const user =
+    useAuthStore(
+      (state) =>
+        state.user,
+    );
+
+  const isBranchManager =
+    user?.role ===
+    'BRANCH_MANAGER';
+
+  const managedBranch =
+    user?.managedBranch ??
+    null;
+
   const [
     reportKind,
     setReportKind,
@@ -1112,16 +1130,26 @@ export function ReportsPage() {
         getBranches,
       staleTime:
         60_000,
+
+      enabled:
+        !isBranchManager,
     });
+
+  const effectiveBranchId =
+    isBranchManager
+      ? managedBranch?.id ??
+        ''
+      : branchId;
 
   const filters =
     useMemo<
       ReportFilters
     >(
       () => ({
-        ...(branchId
+        ...(effectiveBranchId
           ? {
-              branchId,
+              branchId:
+                effectiveBranchId,
             }
           : {}),
 
@@ -1152,7 +1180,7 @@ export function ReportsPage() {
         sortOrder,
       }),
       [
-        branchId,
+        effectiveBranchId,
         definition
           .dateAware,
         fromDate,
@@ -1179,7 +1207,13 @@ export function ReportsPage() {
         ),
 
       enabled:
-        !dateError,
+        !dateError &&
+        (
+          !isBranchManager ||
+          Boolean(
+            managedBranch?.id,
+          )
+        ),
 
       placeholderData:
         (
@@ -1232,19 +1266,21 @@ export function ReportsPage() {
       ?.pagination;
 
   const selectedBranch =
-    branchesQuery.data
-      ?.find(
-        (
-          branch,
-        ) =>
-          branch.id ===
-          (
-            reportQuery.data
-              ?.scope
-              .branchId ??
-            branchId
-          ),
-      );
+    isBranchManager
+      ? managedBranch
+      : branchesQuery.data
+          ?.find(
+            (
+              branch,
+            ) =>
+              branch.id ===
+              (
+                reportQuery.data
+                  ?.scope
+                  .branchId ??
+                branchId
+              ),
+          );
 
   const currentPageValue =
     useMemo(
@@ -1416,9 +1452,9 @@ export function ReportsPage() {
             </h1>
 
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 md:text-base">
-              Review company-wide or branch-scoped operational records across
-              sales, payments, stock, deliveries, products, campaigns, branches
-              and rider tips.
+              {isBranchManager
+                ? `Review sales, payments, stock, deliveries, products, campaigns and rider tips for ${managedBranch?.name ?? 'your managed branch'}.`
+                : 'Review company-wide or branch-scoped operational records across sales, payments, stock, deliveries, products, campaigns, branches and rider tips.'}
             </p>
           </div>
 
@@ -1555,50 +1591,59 @@ export function ReportsPage() {
               Branch
             </span>
 
-            <select
-              value={
-                branchId
-              }
-              onChange={(
-                event,
-              ) =>
-                setBranchId(
-                  event.target
-                    .value,
-                )
-              }
-              className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 outline-none focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100"
-            >
-              <option value="">
-                All branches
-              </option>
+            {isBranchManager ? (
+              <div className="flex h-11 w-full items-center rounded-2xl border border-emerald-200 bg-emerald-50 px-4 text-sm font-semibold text-emerald-800">
+                {managedBranch?.name ??
+                  'Managed branch'}{' '}
+                {managedBranch?.code
+                  ? `(${managedBranch.code})`
+                  : ''}
+              </div>
+            ) : (
+              <select
+                value={
+                  branchId
+                }
+                onChange={(
+                  event,
+                ) =>
+                  setBranchId(
+                    event.target
+                      .value,
+                  )
+                }
+                className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 outline-none focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+              >
+                <option value="">
+                  All branches
+                </option>
 
-              {(
-                branchesQuery
-                  .data ??
-                []
-              ).map(
-                (
-                  branch,
-                ) => (
-                  <option
-                    key={
-                      branch.id
-                    }
-                    value={
-                      branch.id
-                    }
-                  >
-                    {
-                      branch.name
-                    }{' '}
-                    ({branch.code})
-                  </option>
-                ),
-              )}
-            </select>
+                {(
+                  branchesQuery
+                    .data ??
+                  []
+                ).map(
+                  (
+                    branch,
+                  ) => (
+                    <option
+                      key={
+                        branch.id
+                      }
+                      value={
+                        branch.id
+                      }
+                    >
+                      {
+                        branch.name
+                      }{' '}
+                      ({branch.code})
+                    </option>
+                  ),
+                )}
+              </select>
+            )}
           </label>
-
           <label className="space-y-2">
             <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
               From
@@ -1780,7 +1825,9 @@ export function ReportsPage() {
                 : 'Company-wide'}
           </p>
           <p className="mt-2 text-xs text-slate-500">
-            Super Admin can switch between company-wide and branch reporting.
+            {isBranchManager
+              ? 'This workspace is locked to your managed branch.'
+              : 'Super Admin can switch between company-wide and branch reporting.'}
           </p>
         </div>
 

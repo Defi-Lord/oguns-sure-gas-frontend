@@ -273,8 +273,19 @@ export function AdminSidebar({
     }
 
     return [
+      '/admin/dashboard',
+      '/admin/orders',
       '/admin/products',
       '/admin/inventory',
+      '/admin/deliveries',
+      '/admin/riders',
+      '/admin/staff',
+      '/admin/notifications',
+      '/admin/reports',
+      '/admin/analytics',
+      '/admin/finance',
+      '/admin/audit',
+      '/admin/settings',
     ].includes(href);
   };
 

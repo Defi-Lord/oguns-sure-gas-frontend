@@ -36,6 +36,10 @@ import {
 import { api, getApiErrorMessage } from '@/lib/api/client';
 
 import {
+  useAuthStore,
+} from '@/stores/auth-store';
+
+import {
   resendManagedInvitation,
 } from '@/lib/api/provisioning';
 
@@ -277,6 +281,20 @@ function DeliveryRow({
 export function RidersCommandCenter() {
   const queryClient = useQueryClient();
 
+  const user =
+    useAuthStore(
+      (state) =>
+        state.user,
+    );
+
+  const isBranchManager =
+    user?.role ===
+    'BRANCH_MANAGER';
+
+  const managedBranch =
+    user?.managedBranch ??
+    null;
+
   const [search, setSearch] = useState('');
   const [branchFilter, setBranchFilter] =
     useState('ALL');
@@ -345,6 +363,9 @@ export function RidersCommandCenter() {
     },
 
     staleTime: 60_000,
+
+    enabled:
+      !isBranchManager,
   });
 
   const profileMutation = useMutation({
@@ -468,7 +489,27 @@ export function RidersCommandCenter() {
   const riders = ridersQuery.data ?? [];
 
   const branchOptions =
-    branchesQuery.data ?? [];
+    isBranchManager
+      ? managedBranch
+        ? [
+            {
+              id:
+                managedBranch.id,
+              name:
+                managedBranch.name,
+              code:
+                managedBranch.code,
+              city:
+                '',
+              state:
+                '',
+              isActive:
+                managedBranch.isActive,
+            },
+          ]
+        : []
+      : branchesQuery.data ??
+        [];
 
   const branches = useMemo(
     () =>
@@ -739,7 +780,9 @@ export function RidersCommandCenter() {
                   )
                 }
                 disabled={
-                  branchesQuery.isLoading
+                  isBranchManager
+                    ? !managedBranch?.isActive
+                    : branchesQuery.isLoading
                 }
                 className="inline-flex w-fit items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-60"
               >
@@ -816,30 +859,37 @@ export function RidersCommandCenter() {
                 />
               </label>
 
-              <select
-                value={branchFilter}
-                onChange={(event) =>
-                  setBranchFilter(
-                    event.target.value,
-                  )
-                }
-                className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none"
-              >
-                <option value="ALL">
-                  All branches
-                </option>
+              {isBranchManager ? (
+                <div className="flex h-11 items-center rounded-xl border border-emerald-200 bg-emerald-50 px-3 text-sm font-semibold text-emerald-800">
+                  {managedBranch?.name ??
+                    'Managed branch'}
+                </div>
+              ) : (
+                <select
+                  value={branchFilter}
+                  onChange={(event) =>
+                    setBranchFilter(
+                      event.target.value,
+                    )
+                  }
+                  className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none"
+                >
+                  <option value="ALL">
+                    All branches
+                  </option>
 
-                {branches.map(
-                  ([id, name]) => (
-                    <option
-                      key={id}
-                      value={id}
-                    >
-                      {name}
-                    </option>
-                  ),
-                )}
-              </select>
+                  {branches.map(
+                    ([id, name]) => (
+                      <option
+                        key={id}
+                        value={id}
+                      >
+                        {name}
+                      </option>
+                    ),
+                  )}
+                </select>
+              )}
 
               <select
                 value={availabilityFilter}
@@ -1484,50 +1534,59 @@ export function RidersCommandCenter() {
                           Assigned branch
                         </span>
 
-                        <select
-                          value={profileForm.branchId}
-                          onChange={(event) =>
-                            setProfileForm(
-                              (current) => ({
-                                ...current,
-                                branchId:
-                                  event.target
-                                    .value,
-                              }),
-                            )
-                          }
-                          disabled={
-                            branchesQuery.isLoading ||
-                            profileMutation.isPending
-                          }
-                          className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-slate-400 disabled:bg-slate-50"
-                        >
-                          <option value="">
-                            No branch assigned
-                          </option>
-
-                          {branchOptions.map(
-                            (branch) => (
-                              <option
-                                key={branch.id}
-                                value={branch.id}
-                              >
-                                {branch.name} ·{' '}
-                                {branch.code}
+                        {isBranchManager ? (
+                          <div className="mt-2 flex min-h-11 items-center rounded-xl border border-emerald-200 bg-emerald-50 px-3 text-sm font-semibold text-emerald-800">
+                            {managedBranch?.name ??
+                              selectedRider.branch?.name ??
+                              'Managed branch'}
+                          </div>
+                        ) : (
+                          <>
+                            <select
+                              value={profileForm.branchId}
+                              onChange={(event) =>
+                                setProfileForm(
+                                  (current) => ({
+                                    ...current,
+                                    branchId:
+                                      event.target
+                                        .value,
+                                  }),
+                                )
+                              }
+                              disabled={
+                                branchesQuery.isLoading ||
+                                profileMutation.isPending
+                              }
+                              className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-slate-400 disabled:bg-slate-50"
+                            >
+                              <option value="">
+                                No branch assigned
                               </option>
-                            ),
-                          )}
-                        </select>
 
-                        {branchesQuery.isError ? (
-                          <span className="mt-2 block text-xs font-semibold text-red-600">
-                            {getApiErrorMessage(
-                              branchesQuery.error,
-                            )}
-                          </span>
-                        ) : null}
+                              {branchOptions.map(
+                                (branch) => (
+                                  <option
+                                    key={branch.id}
+                                    value={branch.id}
+                                  >
+                                    {branch.name} Â·{' '}
+                                    {branch.code}
+                                  </option>
+                                ),
+                              )}
+                            </select>
+
+                            {branchesQuery.isError ? (
+                              <span className="mt-2 block text-xs font-semibold text-red-600">
+                                {getApiErrorMessage(
+                                  branchesQuery.error,
+                                )}
+                              </span>
+                            ) : null}
+                          </>
+                        )}
                       </label>
-
                       <label className="block">
                         <span className="text-xs font-bold text-slate-500">
                           Vehicle type
@@ -1592,7 +1651,8 @@ export function RidersCommandCenter() {
                           }
                           disabled={
                             profileMutation.isPending ||
-                            branchesQuery.isLoading
+                            (!isBranchManager &&
+                              branchesQuery.isLoading)
                           }
                           className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-black text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
                         >

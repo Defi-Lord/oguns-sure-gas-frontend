@@ -31,6 +31,18 @@ export const getManagementBranches =
     return response.data.data.branches;
   };
 
+export const getManagementBranch =
+  async (
+    branchId: string,
+  ): Promise<Branch> => {
+    const response =
+      await api.get<BranchResponse>(
+        `/branches/management/${branchId}`,
+      );
+
+    return response.data.data.branch;
+  };
+
 export const getBranch =
   async (
     branchId: string,

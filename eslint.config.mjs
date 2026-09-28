@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Archived stage snapshots are not application source.
+    ".stage*-backup-*/**",
   ]),
 ]);
 

@@ -44,6 +44,10 @@ import {
   getApiErrorMessage,
 } from '@/lib/api/client';
 
+import {
+  useAuthStore,
+} from '@/stores/auth-store';
+
 import type {
   AuditListFilters,
   AuditLog,
@@ -656,6 +660,20 @@ function DetailItem({
 }
 
 export function AuditPage() {
+  const user =
+    useAuthStore(
+      (state) =>
+        state.user,
+    );
+
+  const isBranchManager =
+    user?.role ===
+    'BRANCH_MANAGER';
+
+  const managedBranch =
+    user?.managedBranch ??
+    null;
+
   const [draft, setDraft] =
     useState<FilterDraft>(
       EMPTY_FILTERS,
@@ -675,13 +693,19 @@ export function AuditPage() {
   const [selectedId, setSelectedId] =
     useState<string | null>(null);
 
+  const effectiveBranchId =
+    isBranchManager
+      ? managedBranch?.id ??
+        ''
+      : filters.branchId;
+
   const apiFilters =
     useMemo<AuditListFilters>(
       () => ({
-        ...(filters.branchId
+        ...(effectiveBranchId
           ? {
               branchId:
-                filters.branchId,
+                effectiveBranchId,
             }
           : {}),
         ...(filters.actorId
@@ -732,6 +756,7 @@ export function AuditPage() {
         limit,
       }),
       [
+        effectiveBranchId,
         filters,
         limit,
         page,
@@ -747,6 +772,9 @@ export function AuditPage() {
         getManagementBranches,
       staleTime: 60_000,
       retry: false,
+
+      enabled:
+        !isBranchManager,
     });
 
   const auditQuery =
@@ -761,6 +789,12 @@ export function AuditPage() {
         ),
       retry: false,
       staleTime: 15_000,
+
+      enabled:
+        !isBranchManager ||
+        Boolean(
+          managedBranch?.id,
+        ),
     });
 
   const logs =
@@ -885,7 +919,9 @@ export function AuditPage() {
               </h1>
 
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
-                Review append-only administrative and operational events across the company. Inspect the actor, branch, entity, sanitized metadata and request context without changing historical records.
+                {isBranchManager
+                  ? `Review append-only administrative and operational events for ${managedBranch?.name ?? 'your managed branch'}. Historical records remain read-only and backend-scoped to your branch.`
+                  : 'Review append-only administrative and operational events across the company. Inspect the actor, branch, entity, sanitized metadata and request context without changing historical records.'}
               </p>
             </div>
 
@@ -995,32 +1031,41 @@ export function AuditPage() {
           <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <label>
               <FieldLabel>Branch</FieldLabel>
-              <select
-                value={draft.branchId}
-                onChange={(event) =>
-                  updateDraft(
-                    'branchId',
-                    event.target.value,
-                  )
-                }
-                className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200 dark:focus:ring-emerald-400/10"
-              >
-                <option value="">
-                  All branches
-                </option>
-                {(branchesQuery.data ?? []).map(
-                  (branch) => (
-                    <option
-                      key={branch.id}
-                      value={branch.id}
-                    >
-                      {branch.name} ({branch.code})
-                    </option>
-                  ),
-                )}
-              </select>
+              {isBranchManager ? (
+                <div className="flex h-11 w-full items-center rounded-2xl border border-emerald-200 bg-emerald-50 px-3 text-sm font-semibold text-emerald-800 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-200">
+                  {managedBranch?.name ??
+                    'Managed branch'}{' '}
+                  {managedBranch?.code
+                    ? `(${managedBranch.code})`
+                    : ''}
+                </div>
+              ) : (
+                <select
+                  value={draft.branchId}
+                  onChange={(event) =>
+                    updateDraft(
+                      'branchId',
+                      event.target.value,
+                    )
+                  }
+                  className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200 dark:focus:ring-emerald-400/10"
+                >
+                  <option value="">
+                    All branches
+                  </option>
+                  {(branchesQuery.data ?? []).map(
+                    (branch) => (
+                      <option
+                        key={branch.id}
+                        value={branch.id}
+                      >
+                        {branch.name} ({branch.code})
+                      </option>
+                    ),
+                  )}
+                </select>
+              )}
             </label>
-
             <label>
               <FieldLabel>Action contains</FieldLabel>
               <input
