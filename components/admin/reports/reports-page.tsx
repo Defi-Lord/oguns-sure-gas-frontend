@@ -1222,10 +1222,10 @@ export function ReportsPage() {
           previousData,
     });
 
-  const rows =
-    reportQuery.data
-      ?.rows ??
-    [];
+  const rows = useMemo(
+    () => reportQuery.data?.rows ?? [],
+    [reportQuery.data?.rows],
+  );
 
   const filteredRows =
     useMemo(

@@ -444,8 +444,14 @@ export function CampaignManagementPage() {
     enabled: Boolean(selectedVoucherId),
   });
 
-  const campaigns = campaignsQuery.data ?? [];
-  const vouchers = vouchersQuery.data ?? [];
+  const campaigns = useMemo(
+    () => campaignsQuery.data ?? [],
+    [campaignsQuery.data],
+  );
+  const vouchers = useMemo(
+    () => vouchersQuery.data ?? [],
+    [vouchersQuery.data],
+  );
   const products = productsQuery.data ?? [];
 
   const campaignMetrics = useMemo(

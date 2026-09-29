@@ -273,7 +273,10 @@ export function DeliveriesCommandCenter() {
     staleTime: 20_000,
     refetchOnWindowFocus: false,
   });
-  const deliveries = deliveriesQuery.data ?? [];
+  const deliveries = useMemo(
+    () => deliveriesQuery.data ?? [],
+    [deliveriesQuery.data],
+  );
   const selectedDelivery = deliveries.find((d) => d.id === selectedDeliveryId) ?? null;
 
   const branches = useMemo(() => {

@@ -2319,9 +2319,10 @@ export function BranchesPage() {
         30 * 1000,
     });
 
-  const branches =
-    branchesQuery.data ??
-    [];
+  const branches = useMemo(
+    () => branchesQuery.data ?? [],
+    [branchesQuery.data],
+  );
 
   const filteredBranches =
     useMemo(() => {

@@ -29,7 +29,6 @@ import {
   Clock3,
   CreditCard,
   Filter,
-  Flame,
   Loader2,
   Mail,
   MapPin,
@@ -1098,8 +1097,10 @@ export function OrdersCommandCenter() {
         false,
     });
 
-  const orders =
-    ordersQuery.data ?? [];
+  const orders = useMemo(
+    () => ordersQuery.data ?? [],
+    [ordersQuery.data],
+  );
 
   const branches =
     useMemo(() => {

@@ -486,30 +486,27 @@ export function RidersCommandCenter() {
       });
     };
 
-  const riders = ridersQuery.data ?? [];
+  const riders = useMemo(
+    () => ridersQuery.data ?? [],
+    [ridersQuery.data],
+  );
 
-  const branchOptions =
-    isBranchManager
-      ? managedBranch
-        ? [
-            {
-              id:
-                managedBranch.id,
-              name:
-                managedBranch.name,
-              code:
-                managedBranch.code,
-              city:
-                '',
-              state:
-                '',
-              isActive:
-                managedBranch.isActive,
-            },
-          ]
-        : []
-      : branchesQuery.data ??
-        [];
+  const branchOptions = useMemo(
+    () =>
+      isBranchManager
+        ? managedBranch
+          ? [{
+              id: managedBranch.id,
+              name: managedBranch.name,
+              code: managedBranch.code,
+              city: '',
+              state: '',
+              isActive: managedBranch.isActive,
+            }]
+          : []
+        : branchesQuery.data ?? [],
+    [isBranchManager, managedBranch, branchesQuery.data],
+  );
 
   const branches = useMemo(
     () =>

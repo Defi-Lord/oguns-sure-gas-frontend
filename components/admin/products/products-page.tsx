@@ -1,5 +1,7 @@
 'use client';
 
+import Image from 'next/image';
+
 import {
   useMemo,
   useState,
@@ -1198,8 +1200,11 @@ function ProductForm({
                     }
                     className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white"
                   >
-                    <div className="aspect-square bg-slate-100">
-                      <img
+                    <div className="relative aspect-square bg-slate-100">
+                      <Image
+                        fill
+                        unoptimized
+                        sizes="(min-width: 640px) 200px, 45vw"
                         src={
                           image.url
                         }
@@ -1288,8 +1293,11 @@ function ProductForm({
                     }
                     className="relative overflow-hidden rounded-2xl border border-emerald-200 bg-white"
                   >
-                    <div className="aspect-square bg-slate-100">
-                      <img
+                    <div className="relative aspect-square bg-slate-100">
+                      <Image
+                        fill
+                        unoptimized
+                        sizes="(min-width: 640px) 200px, 45vw"
                         src={
                           image.previewUrl
                         }
@@ -1677,7 +1685,10 @@ function ProductRow({
       <div className="flex min-w-0 items-center gap-3">
         <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
           {primaryImage ? (
-            <img
+            <Image
+              width={48}
+              height={48}
+              unoptimized
               src={
                 primaryImage.url
               }
@@ -1964,9 +1975,10 @@ export function ProductsPage() {
         ),
     });
 
-  const products =
-    productsQuery.data ??
-    [];
+  const products = useMemo(
+    () => productsQuery.data ?? [],
+    [productsQuery.data],
+  );
 
   const categories =
     categoriesQuery.data ??
