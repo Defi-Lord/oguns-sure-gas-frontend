@@ -225,6 +225,7 @@ export function AdminTopbar({
           <button
             type="button"
             aria-label="Notifications"
+            onClick={() => router.push('/admin/notifications')}
             className="relative flex size-10 items-center justify-center rounded-xl text-slate-600 transition hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-white/[0.06]"
           >
             <Bell className="size-[18px]" />

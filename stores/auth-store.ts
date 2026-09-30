@@ -14,6 +14,7 @@ interface AuthState {
   refreshToken: string | null;
   isAuthenticated: boolean;
   hasHydrated: boolean;
+  sessionVersion: number;
 
   setAuth: (
     user: AuthUser,
@@ -44,16 +45,18 @@ export const useAuthStore =
         refreshToken: null,
         isAuthenticated: false,
         hasHydrated: false,
+        sessionVersion: 0,
 
         setAuth: (user, tokens) => {
-          set({
+          set((state) => ({
+            sessionVersion: state.sessionVersion + 1,
             user,
             accessToken:
               tokens.accessToken,
             refreshToken:
               tokens.refreshToken,
             isAuthenticated: true,
-          });
+          }));
         },
 
         setUser: (user) => {
@@ -74,12 +77,13 @@ export const useAuthStore =
         },
 
         clearAuth: () => {
-          set({
+          set((state) => ({
+            sessionVersion: state.sessionVersion + 1,
             user: null,
             accessToken: null,
             refreshToken: null,
             isAuthenticated: false,
-          });
+          }));
         },
 
         setHasHydrated: (value) => {
