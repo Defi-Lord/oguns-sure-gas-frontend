@@ -3,6 +3,8 @@ import type {
 } from 'next';
 
 import './globals.css';
+import '@/components/shared/mobile-usability.css';
+import { DeveloperCredit } from '@/components/shared/developer-credit';
 
 import {
   AppProviders,
@@ -30,6 +32,7 @@ export default function RootLayout({
       <body>
         <AppProviders>
           {children}
+          <DeveloperCredit />
         </AppProviders>
       </body>
     </html>

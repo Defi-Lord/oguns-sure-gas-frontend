@@ -1,0 +1,95 @@
+.footer {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px 16px 28px;
+  background: linear-gradient(120deg, #f6faf4, #fffef9 48%, #eff9f2);
+  border-top: 1px solid #dfeadd;
+  color: #285d4a;
+  overflow: hidden;
+}
+.footer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 100%, #cdf1c255, transparent 65%);
+}
+.signature {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  max-width: 100%;
+  padding: 13px 20px 13px 13px;
+  border: 1px solid #cbdcc0;
+  border-radius: 21px;
+  background: linear-gradient(135deg, #fff, #f7ffed 55%, #fffcf1);
+  box-shadow: 0 5px 20px #335b3a0c, inset 0 1px 0 #fff;
+  overflow: hidden;
+  animation: halo 6s ease-in-out infinite !important;
+  transition: transform .3s ease, border-color .3s ease;
+}
+.signature::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #c3a75d, #8bd6a5, transparent);
+  background-size: 200% 100%;
+  animation: edge 8s linear infinite !important;
+  pointer-events: none;
+}
+.signature::after {
+  content: '';
+  position: absolute;
+  inset: -70% auto -70% -60%;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, #fff9, transparent);
+  transform: skewX(-25deg);
+  animation: light 7s ease-in-out infinite !important;
+  pointer-events: none;
+}
+.signature:hover { transform: translateY(-2px); border-color: #b3cfad; }
+.monogram {
+  display: grid;
+  place-items: center;
+  position: relative;
+  flex-shrink: 0;
+  width: 45px;
+  height: 47px;
+  border: 1px solid #b9d4ae;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #fff, #e2f4d2);
+  box-shadow: inset 0 1px 0 #fff, 0 0 20px #afda8c35;
+  color: #367650;
+}
+.monogram svg { width: 29px; height: 29px; }
+.spark { position: absolute; width: 5px; height: 5px; border-radius: 50%; top: 6px; right: 5px; background: #c1a45d; box-shadow: 0 0 8px #d4bc78; }
+.copy { display: grid; gap: 2px; }
+.label { font-size: 9px; line-height: 1.4; color: #718773; letter-spacing: 1.4px; text-transform: uppercase; font-weight: 550; }
+.name { display: flex; align-items: baseline; gap: 3px; font-size: 21px; line-height: 1.15; letter-spacing: -.8px; font-weight: 750; color: #2a6349; }
+.dot { width: 4px; height: 4px; border-radius: 50%; background: #baa260; }
+.divider { flex-shrink: 0; width: 1px; height: 29px; margin: 0 2px; background: linear-gradient(transparent,#cfdcc0,transparent); }
+.note { font-size: 10px; line-height: 1.65; color: #647b69; white-space: nowrap; }
+.note>span { color: #8a987d; }
+.star { width: 21px; height: 21px; flex-shrink: 0; margin-left: 2px; color: #b2a367; filter: drop-shadow(0 0 5px #ddcf87); animation: twinkle 5s ease-in-out infinite !important; }
+@keyframes halo { 0%,100% { box-shadow: 0 5px 20px #335b3a0c, 0 0 15px #bbe19120; } 50% { box-shadow: 0 5px 22px #335b3a12, 0 0 28px #badb8b60; } }
+@keyframes edge { to { background-position: 200% 0; } }
+@keyframes light { 0%,15% { left: -60%; opacity: 0; } 30% { opacity: 1; } 65%,100% { left: 140%; opacity: 0; } }
+@keyframes twinkle { 50% { transform: rotate(18deg) scale(1.08); opacity: .6; } }
+@media(max-width:450px) {
+  .footer { padding: 22px 12px 25px; }
+  .signature { gap: 10px; padding: 12px 14px 12px 12px; border-radius: 19px; }
+  .monogram { width: 39px; height: 43px; border-radius: 13px; }
+  .name { font-size: 19px; }
+  .note { font-size: 9px; }
+  .star { display: none; }
+}
+@media(max-width:350px) { .signature { gap: 8px; padding: 11px; } .divider { margin: 0; } .note { font-size: 8px; } .label { font-size: 8px; } }

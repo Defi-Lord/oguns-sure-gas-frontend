@@ -665,7 +665,7 @@ function AccountSettings({
 
         <div className="mt-5 flex flex-wrap gap-2">
           <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
-            Super Admin
+            {profile.role === 'BRANCH_MANAGER' ? 'Branch Manager' : 'Super Admin'}
           </span>
 
           <span
@@ -711,8 +711,8 @@ function AccountSettings({
           </h2>
 
           <p className="mt-2 text-sm leading-6 text-slate-500">
-            Update the contact information attached to your Super Admin
-            account. Your login email is read-only in the current account API.
+            Update the contact information attached to your account.
+            Your login email is read-only in the current account API.
           </p>
         </div>
 

@@ -1,8 +1,9 @@
 'use client';
 
+import { AdminPageFinder } from './admin-page-finder';
+
 import {
   useEffect,
-  useRef,
   useState,
 } from 'react';
 
@@ -17,7 +18,6 @@ import {
   LogOut,
   Menu,
   Moon,
-  Search,
   SunMedium,
 } from 'lucide-react';
 
@@ -37,9 +37,6 @@ export function AdminTopbar({
   onOpenMobileMenu,
 }: AdminTopbarProps) {
   const router = useRouter();
-
-  const searchRef =
-    useRef<HTMLInputElement>(null);
 
   const [
     theme,
@@ -107,35 +104,6 @@ export function AdminTopbar({
     };
   }, []);
 
-  useEffect(() => {
-    const handleShortcut = (
-      event: KeyboardEvent,
-    ) => {
-      if (
-        (event.ctrlKey ||
-          event.metaKey) &&
-        event.key.toLowerCase() ===
-          'k'
-      ) {
-        event.preventDefault();
-
-        searchRef.current?.focus();
-      }
-    };
-
-    window.addEventListener(
-      'keydown',
-      handleShortcut,
-    );
-
-    return () => {
-      window.removeEventListener(
-        'keydown',
-        handleShortcut,
-      );
-    };
-  }, []);
-
   const toggleTheme = () => {
     const nextTheme:
       ThemeMode =
@@ -195,26 +163,7 @@ export function AdminTopbar({
           <Menu className="size-5" />
         </button>
 
-        <div className="relative hidden min-w-0 w-full max-w-[550px] sm:block">
-          <Search className="pointer-events-none absolute left-4 top-1/2 size-[17px] -translate-y-1/2 text-slate-500 dark:text-slate-400" />
-
-          <input
-            ref={searchRef}
-            type="search"
-            placeholder="Search orders, branches, riders, products..."
-            className="h-11 w-full rounded-[14px] border border-slate-200 bg-slate-50/80 pl-11 pr-20 text-[13px] text-slate-800 outline-none transition placeholder:text-slate-400 hover:bg-white focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-500/[0.06] dark:border-white/[0.08] dark:bg-white/[0.05] dark:text-slate-100 dark:placeholder:text-slate-500 dark:hover:bg-white/[0.07]"
-          />
-
-          <div className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 items-center gap-1 lg:flex">
-            <span className="rounded-md border border-slate-200 bg-white px-1.5 py-1 text-[9px] font-semibold text-slate-400 shadow-sm dark:border-white/10 dark:bg-white/[0.07]">
-              Ctrl
-            </span>
-
-            <span className="rounded-md border border-slate-200 bg-white px-1.5 py-1 text-[9px] font-semibold text-slate-400 shadow-sm dark:border-white/10 dark:bg-white/[0.07]">
-              K
-            </span>
-          </div>
-        </div>
+        <AdminPageFinder />
 
         <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-1.5">
           <div className="hidden items-center gap-2 rounded-full bg-emerald-50 px-3 py-2 text-[11px] font-semibold text-emerald-700 md:flex dark:bg-emerald-400/10 dark:text-emerald-300">

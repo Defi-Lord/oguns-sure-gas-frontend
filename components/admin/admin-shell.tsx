@@ -188,6 +188,7 @@ export function AdminShell({
     const allowedBranchManagerRoutes = [
       '/admin/dashboard',
       '/admin/orders',
+      '/admin/support',
       '/admin/products',
       '/admin/inventory',
       '/admin/deliveries',
@@ -310,8 +311,9 @@ export function AdminShell({
       />
 
       <div
+        data-admin-content
         className={[
-          'relative z-10 min-h-dvh min-w-0 transition-[padding] duration-300',
+          'relative min-h-dvh min-w-0 transition-[padding] duration-300',
           sidebarCollapsed
             ? 'md:pl-[88px]'
             : 'md:pl-[304px]',

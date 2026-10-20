@@ -1,5 +1,7 @@
 'use client';
 
+import { canAccessPortal, portalHome, type Portal } from '@/lib/portal-access';
+
 import {
   useState,
 } from 'react';
@@ -51,7 +53,11 @@ import {
   Label,
 } from '@/components/ui/label';
 
-export function LoginForm() {
+// Keep sign-in feedback across the session cache reset triggered by clearAuth.
+// This holds only error text in memory, never credentials or tokens.
+const loginErrors = new Map<Portal, string>();
+
+export function LoginForm({ portal = 'admin' }: { portal?: Portal }) {
   const router = useRouter();
 
   const setAuth =
@@ -81,7 +87,7 @@ export function LoginForm() {
     errorMessage,
     setErrorMessage,
   ] = useState<string | null>(
-    null,
+    () => loginErrors.get(portal) ?? null,
   );
 
   const loginMutation =
@@ -104,46 +110,31 @@ export function LoginForm() {
           tokens,
         } = response.data;
 
-        if (
-          user.role !==
-          'SUPER_ADMIN' &&
-          user.role !==
-          'BRANCH_MANAGER'
-        ) {
+        if (!canAccessPortal(user, portal)) {
+          const message = user.status !== 'ACTIVE'
+              ? 'Your account is not active. Contact your branch manager.'
+              : portal === 'rider'
+                ? 'Use an authorised rider account to sign in here.'
+                : portal === 'staff'
+                ? 'Use an authorised staff account to sign in here.'
+                : 'This portal is restricted to Super Admin and Branch Manager accounts.';
+          loginErrors.set(portal, message);
           clearAuth();
-
-          setErrorMessage(
-            'This portal is restricted to Super Admin and Branch Manager accounts.',
-          );
-
+          setErrorMessage(message);
           return;
         }
 
-        if (
-          user.status !== 'ACTIVE'
-        ) {
-          clearAuth();
-
-          setErrorMessage(
-            'Your administrator account is not active.',
-          );
-
-          return;
-        }
-
+        loginErrors.delete(portal);
         setAuth(user, tokens);
 
-        router.replace(
-          '/admin/dashboard',
-        );
+        router.replace(portalHome(portal));
       },
 
       onError: (error) => {
+        const message = getApiErrorMessage(error);
+        loginErrors.set(portal, message);
         clearAuth();
-
-        setErrorMessage(
-          getApiErrorMessage(error),
-        );
+        setErrorMessage(message);
       },
     });
 
@@ -153,6 +144,7 @@ export function LoginForm() {
   ) => {
     event.preventDefault();
 
+    loginErrors.delete(portal);
     setErrorMessage(null);
 
     const normalizedEmail =
@@ -205,7 +197,7 @@ export function LoginForm() {
             id="email"
             type="email"
             autoComplete="email"
-            placeholder="admin@mysuregas.com"
+            placeholder={portal === 'rider' ? 'Your rider email address' : portal === 'staff' ? 'Your staff email address' : 'admin@mysuregas.com'}
             value={email}
             onChange={(event) =>
               setEmail(
@@ -285,7 +277,7 @@ export function LoginForm() {
             Signing in...
           </>
         ) : (
-          'Sign in to Admin'
+          portal === 'rider' ? 'Sign in to Rider' : portal === 'staff' ? 'Sign in to Staff' : 'Sign in to Admin'
         )}
       </Button>
     </form>

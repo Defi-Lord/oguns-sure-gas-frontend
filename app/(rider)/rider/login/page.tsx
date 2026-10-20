@@ -1,0 +1,6 @@
+import { LoginForm } from '@/components/auth/login-form';
+import { RiderBrand } from '@/components/rider/rider-brand';
+import { ArrowUpRight, Bike, ShieldCheck } from 'lucide-react';
+import Link from 'next/link';
+import s from '@/components/rider/rider.module.css';
+export default function Page(){return <main className={s.login}><section className={s.loginStory}><RiderBrand/><div><span className={s.eyebrow}>THE GOOD ENERGY RIDERS</span><h1>Every journey.<br/><em>A brighter doorstep.</em></h1><p>Bring good energy to your community. Your assigned deliveries, together in one workspace.</p></div><div className={s.bikeArt} aria-hidden="true"><Bike size={160} strokeWidth={1.1}/><span/><span/></div><p>MySureGas · Rider portal</p></section><section className={s.loginPanel}><Link href="/staff/login" className={s.portalLink}>Staff sign-in <ArrowUpRight size={15}/></Link><div className={s.loginForm}><span className={s.formIcon}><Bike size={27}/></span><h2>Welcome back, rider.</h2><p>Sign in with your rider account to see your assigned deliveries.</p><LoginForm portal="rider"/><details><summary>Need help signing in?</summary><p>Contact your branch manager if your rider account or invitation needs attention.</p></details></div><p className={s.loginFooter}><ShieldCheck size={14}/> Keep your password private.</p></section></main>;}

@@ -2259,8 +2259,9 @@ export function CampaignManagementPage() {
                               Winner selection
                             </h3>
                             <p className="mt-1 text-sm text-slate-500">
-                              Leave count blank to use the configured winner limit.
+                              Approved entries are selected in recorded submission order. Review earlier pending entries first. Leave count blank to fill the remaining reward places.
                             </p>
+                            {winnerMutation.isError && winnerMutation.variables === selectedCampaign.id && <p role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">{getApiErrorMessage(winnerMutation.error)}</p>}
                           </div>
 
                           <div className="flex gap-2">

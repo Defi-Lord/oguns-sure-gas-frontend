@@ -1,0 +1,13 @@
+/* Modal surfaces scroll independently; the page behind them stays still. */
+html:has(dialog[open]),html:has(dialog[open]) body{overflow:hidden!important}
+dialog[open]{overscroll-behavior:contain}
+@media(max-width:767px){
+ html:has([data-mobile-navigation-open="true"]),html:has([data-mobile-navigation-open="true"]) body{overflow:hidden!important}
+ [data-mobile-navigation-open] nav{overscroll-behavior:contain}
+ /* A 16px input font avoids automatic form zoom in mobile Safari. */
+ input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="hidden"]),select,textarea{font-size:16px!important;max-width:100%}
+ dialog[aria-label="Customer menu"],dialog[aria-label="Staff menu"],dialog[aria-label="Rider menu"]{height:100dvh;max-height:100dvh;overscroll-behavior-y:contain}
+ [data-admin-content] main{overflow-wrap:anywhere}
+ [data-admin-content] main :is(section,article,form){min-width:0}
+ [data-admin-content] main :is(input,select,textarea){min-width:0}
+}

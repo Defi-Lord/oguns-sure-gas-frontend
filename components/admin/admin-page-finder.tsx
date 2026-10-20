@@ -1,0 +1,34 @@
+'use client';
+import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { ArrowUpRight, BarChart3, Bell, Boxes, Building2, ClipboardList, Gift, LayoutDashboard, LifeBuoy, PackageSearch, Search, Settings, ShieldCheck, Sparkles, Truck, UsersRound, WalletCards, X } from 'lucide-react';
+import { useAuthStore } from '@/stores/auth-store';
+import s from './admin-page-finder.module.css';
+const pages=[
+ {href:'/admin/dashboard',title:'Overview',description:'Your workspace at a glance',words:'home dashboard summary',icon:LayoutDashboard},
+ {href:'/admin/orders',title:'Orders',description:'Find and manage customer purchases',words:'purchases payment customer search order',icon:ClipboardList},
+ {href:'/admin/support',title:'Order support',description:'Respond to customer concerns',words:'help issue complaint case refund question',icon:LifeBuoy},
+ {href:'/admin/branches',title:'Branches',description:'Manage your branch network',words:'locations stores managers branch',icon:Building2,global:true},
+ {href:'/admin/products',title:'Products',description:'Manage products, prices and categories',words:'catalogue gas cylinder oil price product',icon:PackageSearch},
+ {href:'/admin/inventory',title:'Inventory',description:'Review branch stock and adjustments',words:'stock availability quantity inventory',icon:Boxes},
+ {href:'/admin/deliveries',title:'Deliveries',description:'Follow delivery progress and assignments',words:'dispatch tracking delivery rider',icon:Truck},
+ {href:'/admin/riders',title:'Riders',description:'Manage your delivery team',words:'driver vehicle rider',icon:Truck},
+ {href:'/admin/staff',title:'Staff',description:'Manage staff and invitations',words:'people attendant employee team invite',icon:UsersRound},
+ {href:'/admin/campaigns',title:'Campaigns',description:'Manage giveaways and voucher campaigns',words:'giveaway reward voucher winner campaign',icon:Gift,global:true},
+ {href:'/admin/notifications',title:'Notifications',description:'Read your account and operational updates',words:'inbox alerts messages notification',icon:Bell},
+ {href:'/admin/reports',title:'Reports',description:'Review operational reports',words:'export download report',icon:BarChart3},
+ {href:'/admin/analytics',title:'Analytics',description:'Explore performance and trends',words:'performance chart trend analysis',icon:BarChart3},
+ {href:'/admin/finance',title:'Finance',description:'Review payments, settlements and payouts',words:'money payment payout bank settlement withdrawal',icon:WalletCards},
+ {href:'/admin/audit',title:'Audit log',description:'Review recorded account and team actions',words:'history accountability log security audit',icon:ShieldCheck},
+ {href:'/admin/settings',title:'Settings',description:'Manage your account and available settings',words:'profile account delivery fee area configuration',icon:Settings},
+];
+export function AdminPageFinder(){
+ const router=useRouter(),user=useAuthStore(v=>v.user);const dialog=useRef<HTMLDialogElement>(null),input=useRef<HTMLInputElement>(null),opener=useRef<HTMLElement|null>(null);
+ const [query,setQuery]=useState(''),[active,setActive]=useState(0);
+ const visible=pages.filter(p=>(user?.role==='SUPER_ADMIN'||user?.role==='BRANCH_MANAGER'&&!p.global)&&query.trim().toLowerCase().split(/\s+/).every(word=>`${p.title} ${p.description} ${p.words}`.toLowerCase().includes(word)));
+ function open(){if(!user||!['SUPER_ADMIN','BRANCH_MANAGER'].includes(user.role)||user.status!=='ACTIVE'||Array.from(document.querySelectorAll('dialog[open],[data-mobile-navigation-open="true"],button[aria-label="Close navigation"]')).some(el=>el.getClientRects().length>0))return;opener.current=document.activeElement instanceof HTMLElement?document.activeElement:null;setQuery('');setActive(0);dialog.current?.showModal();input.current?.focus();}
+ function close(){dialog.current?.close();opener.current?.focus();}
+ function go(index:number){const page=visible[index];if(!page)return;close();router.push(page.href);}
+ useEffect(()=>{const key=(event:KeyboardEvent)=>{if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'){event.preventDefault();if(dialog.current?.open)input.current?.focus();else document.querySelector<HTMLButtonElement>('[data-open-page-finder]')?.click();}};window.addEventListener('keydown',key);return ()=>window.removeEventListener('keydown',key);},[]);
+ return <><button type="button" data-open-page-finder className={s.trigger} aria-label="Find a workspace page" aria-haspopup="dialog" onClick={open}><Search size={18}/><span>Find a page…</span><kbd>Ctrl K</kbd></button><dialog data-page-finder ref={dialog} className={s.dialog} aria-labelledby="page-finder-title" onCancel={e=>{e.preventDefault();close();}} onClick={e=>{if(e.target!==e.currentTarget)return;const rect=e.currentTarget.getBoundingClientRect();if(e.clientX<rect.left||e.clientX>rect.right||e.clientY<rect.top||e.clientY>rect.bottom)close();}}><header><span className={s.glowIcon}><Sparkles size={22}/></span><div><small>MYSUREGAS WORKSPACE</small><h2 id="page-finder-title">Find your next move.</h2></div><button aria-label="Close page finder" onClick={close}><X size={20}/></button></header><label className={s.search}><Search size={19}/><input ref={input} value={query} maxLength={100} aria-label="Search workspace pages" placeholder="Try orders, stock, payouts…" autoComplete="off" aria-controls="page-finder-results" aria-describedby="page-finder-selection" onChange={e=>{setQuery(e.target.value);setActive(0);}} onKeyDown={e=>{if(e.key==='ArrowDown'){e.preventDefault();setActive(v=>visible.length?(v+1)%visible.length:0);}else if(e.key==='ArrowUp'){e.preventDefault();setActive(v=>visible.length?(v-1+visible.length)%visible.length:0);}else if(e.key==='Enter'){e.preventDefault();go(active);}}}/></label><p className={s.hint}>Find a page first. Search individual records using that page’s filters.</p><div className={s.results} id="page-finder-results">{visible.length?<ul>{visible.map((page,index)=>{const Icon=page.icon;return <li key={page.href}><button onClick={()=>go(index)} data-active={index===active} aria-label={`Open ${page.title}`} ref={el=>{if(el&&index===active)el.scrollIntoView({block:'nearest'});}}><span className={s.pageIcon}><Icon size={20}/></span><span className={s.resultCopy}><strong>{page.title}</strong><small>{page.description}</small></span><ArrowUpRight size={17}/></button></li>;})}</ul>:<div className={s.empty}><Search size={28}/><h3>No matching pages.</h3><p>Try a short word such as “stock” or “orders”.</p><button onClick={()=>{setQuery('');setActive(0);input.current?.focus();}}>Show available pages</button></div>}</div><footer><span id="page-finder-selection" role="status" aria-live="polite">{visible.length} page{visible.length===1?'':'s'} · {visible[active]?`Selected: ${visible[active].title}`:'No match'}</span><span>↑ ↓ choose · Enter opens · Esc closes</span></footer></dialog></>;
+}

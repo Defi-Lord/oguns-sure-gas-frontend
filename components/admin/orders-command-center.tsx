@@ -1,4 +1,5 @@
 'use client';
+import { CylinderPhotoView } from '@/components/shared/cylinder-photo';
 
 import {
   useMemo,
@@ -569,6 +570,7 @@ function OrderDetailsDrawer({
             </div>
 
             <div className="space-y-4 p-4 sm:p-6">
+              <CylinderPhotoView key={order.id} orderId={order.id}/>
               <section className="overflow-hidden rounded-[24px] bg-gradient-to-br from-[#0b654a] via-[#087255] to-[#0b5a45] p-5 text-white shadow-[0_20px_55px_rgba(5,92,68,0.22)]">
                 <div className="flex items-center justify-between gap-4">
                   <div>

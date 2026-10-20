@@ -1,6 +1,11 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect, useRef, useSyncExternalStore } from 'react';
+const mobileQuery='(max-width: 767px)';
+function subscribeMobile(change:()=>void){const media=window.matchMedia(mobileQuery);media.addEventListener('change',change);return ()=>media.removeEventListener('change',change);}
+const mobileSnapshot=()=>window.matchMedia(mobileQuery).matches;
+const serverMobileSnapshot=()=>false;
 
 import {
   usePathname,
@@ -9,6 +14,7 @@ import {
 import {
   BarChart3,
   Bell,
+  LifeBuoy,
   Boxes,
   Building2,
   ChevronLeft,
@@ -57,6 +63,11 @@ const primaryNavigation:
       label: 'Overview',
       href: '/admin/dashboard',
       icon: LayoutDashboard,
+    },
+    {
+      label: 'Order support',
+      href: '/admin/support',
+      icon: LifeBuoy,
     },
     {
       label: 'Orders',
@@ -246,6 +257,27 @@ export function AdminSidebar({
   onCollapse,
   onMobileClose,
 }: AdminSidebarProps) {
+  const sidebar=useRef<HTMLElement>(null);
+  const mobile=useSyncExternalStore(subscribeMobile,mobileSnapshot,serverMobileSnapshot);
+  useEffect(()=>{
+    if(!mobile||!mobileOpen||!sidebar.current)return;
+    const panel=sidebar.current,previous=document.activeElement;
+    const content=document.querySelector<HTMLElement>('[data-admin-content]');
+    const wasInert=content?.inert??false;
+    if(content)content.inert=true;
+    const focusable=()=>Array.from(panel.querySelectorAll<HTMLElement>('a[href],button:not([disabled]),[tabindex="0"]')).filter(el=>el.getClientRects().length>0);
+    focusable()[0]?.focus();
+    const key=(event:KeyboardEvent)=>{
+      if(event.key==='Escape'){event.preventDefault();onMobileClose();return;}
+      if(event.key!=='Tab')return;
+      const targets=focusable(),first=targets[0],last=targets[targets.length-1];
+      if(!first){event.preventDefault();panel.focus();return;}
+      if(event.shiftKey&&(document.activeElement===first||!panel.contains(document.activeElement))){event.preventDefault();last?.focus();}
+      else if(!event.shiftKey&&(document.activeElement===last||!panel.contains(document.activeElement))){event.preventDefault();first.focus();}
+    };
+    document.addEventListener('keydown',key);
+    return ()=>{document.removeEventListener('keydown',key);if(content)content.inert=wasInert;if(previous instanceof HTMLElement&&previous.isConnected)previous.focus();};
+  },[mobile,mobileOpen,onMobileClose]);
   const user =
     useAuthStore(
       (state) => state.user,
@@ -275,6 +307,7 @@ export function AdminSidebar({
     return [
       '/admin/dashboard',
       '/admin/orders',
+      '/admin/support',
       '/admin/products',
       '/admin/inventory',
       '/admin/deliveries',
@@ -318,6 +351,13 @@ export function AdminSidebar({
       ) : null}
 
       <aside
+        ref={sidebar}
+        role={mobile?'dialog':undefined}
+        aria-modal={mobile&&mobileOpen?true:undefined}
+        aria-label="Admin navigation"
+        inert={mobile&&!mobileOpen}
+        tabIndex={-1}
+        data-mobile-navigation-open={mobile&&mobileOpen?'true':'false'}
         className={[
           'fixed inset-y-0 left-0 z-50 flex overflow-hidden bg-[#063c34] text-white shadow-[14px_0_45px_rgba(4,47,40,0.09)] transition-[width,transform] duration-300',
           collapsed
@@ -367,6 +407,7 @@ export function AdminSidebar({
                 onClick={
                   onCollapse
                 }
+                aria-label="Collapse navigation"
                 className="ml-auto hidden size-9 items-center justify-center rounded-full bg-white/[0.07] text-white/65 hover:bg-white/10 hover:text-white md:flex"
               >
                 <ChevronLeft className="size-4" />
@@ -378,6 +419,7 @@ export function AdminSidebar({
               onClick={
                 onMobileClose
               }
+              aria-label="Close navigation menu"
               className="ml-auto flex size-9 items-center justify-center rounded-xl text-white/70 hover:bg-white/10 md:hidden"
             >
               <X className="size-5" />
@@ -390,6 +432,7 @@ export function AdminSidebar({
               onClick={
                 onCollapse
               }
+              aria-label="Expand navigation"
               className="mx-auto mt-4 hidden size-9 items-center justify-center rounded-full bg-white/[0.07] text-white/60 hover:bg-white/10 hover:text-white md:flex"
             >
               <ChevronRight className="size-4" />

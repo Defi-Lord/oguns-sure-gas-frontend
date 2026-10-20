@@ -1,5 +1,2 @@
 import { redirect } from 'next/navigation';
-
-export default function HomePage() {
-  redirect('/admin/login');
-}
+export default function HomePage(){redirect('/shop');}

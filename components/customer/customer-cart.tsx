@@ -1,0 +1,22 @@
+'use client';
+import Link from 'next/link';
+import { useState } from 'react';
+import { ArrowRight, Flame, Package, Trash2, ShoppingBag, MapPin, Minus, Plus, LockKeyhole } from 'lucide-react';
+import { useCustomerCart, useCustomerClock, validQuantity, type CartLine } from '@/stores/customer-cart-store';
+import { useAuthStore } from '@/stores/auth-store';
+import s from './customer.module.css';
+export const formatMoney=(value:number)=>new Intl.NumberFormat('en-NG',{style:'currency',currency:'NGN',maximumFractionDigits:2}).format(value);
+export function CartQuantity({line,disabled=false}:{line:CartLine;disabled?:boolean}) {
+ const [value,setValue]=useState(String(line.quantity));const change=useCustomerCart(v=>v.quantity);
+ const valid=validQuantity(line.type,Number(value));
+ function commit(next:number){if(!validQuantity(line.type,next))return;change(line.id,next);setValue(String(next));}
+ return <div><div className={s.quantityControl}><button type="button" aria-label={`Decrease ${line.name}`} disabled={disabled||line.quantity<=1} onClick={()=>commit(Math.max(1,line.quantity-1))}><Minus size={14}/></button><input aria-label={`Quantity for ${line.name}`} type="number" min="1" step={line.type==='GAS'?'0.001':'1'} value={value} disabled={disabled} onChange={e=>{setValue(e.target.value);const next=Number(e.target.value);if(validQuantity(line.type,next))change(line.id,next);}} onBlur={()=>setValue(String(useCustomerCart.getState().items.find(i=>i.id===line.id)?.quantity??line.quantity))}/><button type="button" aria-label={`Increase ${line.name}`} disabled={disabled} onClick={()=>commit(line.quantity+1)}><Plus size={14}/></button><span>{line.unit}</span></div>{!valid&&<small className={s.fieldError} role="alert">{line.type==='GAS'?'Use at least 1 kg, with up to 3 decimal places.':'Use a whole number of at least 1.'}</small>}</div>;
+}
+export function CustomerCart(){
+ const now=useCustomerClock();
+ const cart=useCustomerCart(),user=useAuthStore(v=>v.user);
+ if(!cart.hydrated)return <p role="status">Loading your bag…</p>;
+ const locked=cart.reserving||Boolean(user&&(cart.checkouts[user.id]||(cart.uncertain[user.id]??0)>now));
+ const subtotal=cart.items.reduce((sum,i)=>sum+i.price*i.quantity,0);
+ return <><div className={s.shoppingHeading}><span className={s.pill}><ShoppingBag size={15}/> YOUR SHOPPING BAG</span><h1>A little closer to<br/><em>your everyday essentials.</em></h1><p>Review your products and quantities before checkout.</p></div>{!cart.items.length?<div className={s.empty}><ShoppingBag size={40}/><h3>Your bag is waiting for something good.</h3><p>Choose a branch and add the products you need.</p><Link href="/shop#branches" className={s.primary}>Explore products<ArrowRight size={17}/></Link>{user&&cart.checkouts[user.id]&&<Link href="/shop/checkout" className={s.button}>Resume your checkout</Link>}</div>:<div className={s.checkoutGrid}><section className={s.bagPanel}><div className={s.bagBranch}><MapPin size={18}/><div><strong>{cart.branch?.name}</strong><small>{cart.branch?.city} · Products from one branch</small></div></div>{locked&&<p className={s.gasNote}><LockKeyhole size={16}/> A checkout is already reserved. Resume it before changing this bag.</p>}{cart.items.map(line=><article className={s.bagLine} key={line.id}><span className={s.bagIcon}>{line.type==='GAS'?<Flame size={28}/>:<Package size={28}/>}</span><div className={s.bagLineCopy}><h2>{line.name}</h2><p>{formatMoney(line.price)} per {line.unit}</p><CartQuantity key={`${line.id}-${cart.branch?.id}`} line={line} disabled={locked}/></div><div className={s.bagLineEnd}><strong>{formatMoney(line.price*line.quantity)}</strong><button aria-label={`Remove ${line.name}`} disabled={locked} onClick={()=>cart.remove(line.id)}><Trash2 size={16}/><span>Remove</span></button></div></article>)}<Link href="/shop" className={s.backLink}>← Continue shopping</Link></section><aside className={s.orderSummary}><span className={s.eyebrow}>YOUR BAG AT A GLANCE</span><h2>Order summary</h2><div><span>Product subtotal</span><strong>{formatMoney(subtotal)}</strong></div><p>Estimated product prices. Delivery, any other applicable fees and discounts are calculated at checkout.</p><Link href="/shop/checkout" className={s.primary}>{locked?'Resume checkout':'Continue to checkout'}<ArrowRight size={17}/></Link><span className={s.summaryAssurance}><LockKeyhole size={14}/> Review the final total before payment.</span></aside></div>}</>;
+}

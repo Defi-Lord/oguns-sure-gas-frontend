@@ -1,5 +1,7 @@
 'use client';
 
+import { StaffInvitationLink } from '@/components/staff/staff-invitation-link';
+
 import {
   useCallback,
   useEffect,
@@ -1722,6 +1724,8 @@ export function StaffManagementPage() {
                     </button>
                   </div>
                 </div>
+
+                <StaffInvitationLink key={invitation.invitationToken} token={invitation.invitationToken} />
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
