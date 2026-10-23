@@ -84,6 +84,7 @@ const primaryNavigation:
       href: '/admin/products',
       icon: PackageSearch,
     },
+    { href: '/admin/product-submissions', label: 'Product approvals', icon: PackageSearch },
     {
       label: 'Inventory',
       href: '/admin/inventory',
@@ -287,8 +288,8 @@ export function AdminSidebar({
   /*
    * BRANCH_MANAGER_STAGE_2B_NAVIGATION
    *
-   * The AdminShell route fence remains the real
-   * authorization boundary.
+   * The AdminShell fence controls portal navigation.
+   * Backend services enforce the actual branch authorization.
    *
    * This sidebar filter only prevents Branch Managers
    * from seeing company-wide destinations that Stage 2B
@@ -309,6 +310,7 @@ export function AdminSidebar({
       '/admin/orders',
       '/admin/support',
       '/admin/products',
+      '/admin/product-submissions',
       '/admin/inventory',
       '/admin/deliveries',
       '/admin/riders',

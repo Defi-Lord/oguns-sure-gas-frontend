@@ -5,6 +5,7 @@ import { ArrowUpRight, BarChart3, Bell, Boxes, Building2, ClipboardList, Gift, L
 import { useAuthStore } from '@/stores/auth-store';
 import s from './admin-page-finder.module.css';
 const pages=[
+ {href:'/admin/product-submissions',title:'Product approvals',description:'Review staff product suggestions before publication',words:'staff pending product approval review catalogue',icon:PackageSearch},
  {href:'/admin/dashboard',title:'Overview',description:'Your workspace at a glance',words:'home dashboard summary',icon:LayoutDashboard},
  {href:'/admin/orders',title:'Orders',description:'Find and manage customer purchases',words:'purchases payment customer search order',icon:ClipboardList},
  {href:'/admin/support',title:'Order support',description:'Respond to customer concerns',words:'help issue complaint case refund question',icon:LifeBuoy},

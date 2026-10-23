@@ -3,6 +3,7 @@ import type {
 } from 'next';
 
 import './globals.css';
+import { CustomerEntrance } from '@/components/customer/customer-welcome';
 import '@/components/shared/mobile-usability.css';
 import { DeveloperCredit } from '@/components/shared/developer-credit';
 
@@ -12,11 +13,11 @@ import {
 
 export const metadata: Metadata = {
   title: {
-    default: "MySureGas Admin",
+    default: "MySureGas",
     template: "%s | MySureGas",
   },
   description:
-    "MySureGas administration and operations command center.",
+    "Cooking gas, cylinders and everyday essentials from your local MySureGas branch.",
 };
 
 export default function RootLayout({
@@ -31,6 +32,7 @@ export default function RootLayout({
     >
       <body>
         <AppProviders>
+          <CustomerEntrance/>
           {children}
           <DeveloperCredit />
         </AppProviders>

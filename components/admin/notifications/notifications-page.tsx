@@ -1,4 +1,5 @@
 'use client';
+import { ProductNotificationLink } from '@/components/products/product-notification-link';
 import { SupportNotificationLink } from '@/components/support/support-notification-link';
 
 import {
@@ -1227,7 +1228,7 @@ export function NotificationsPage() {
                                     notification.message
                                   }
                                 </p>
-                                <SupportNotificationLink data={notification.data} portal="admin"/>
+                                <ProductNotificationLink data={notification.data} portal="admin"/><SupportNotificationLink data={notification.data} portal="admin"/>
 
                                 <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-500">
                                   <span className="inline-flex items-center gap-1.5">

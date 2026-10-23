@@ -10,7 +10,7 @@ import { StaffBrand, StaffEnergyArt } from './staff-brand';
 import s from './staff-studio.module.css';
 import { StaffDashboardOrders } from './staff-dashboard-orders';
 
-const links = [{ href: '/staff', label: 'Overview', icon: LayoutDashboard }, { href: '/staff/orders', label: 'Branch orders', icon: Package }, { href: '/staff/support', label: 'Order support', icon: MessageCircle }, { href: '/staff/redeem', label: 'Redeem voucher', icon: Gift }, { href: '/staff/notifications', label: 'Notifications', icon: Bell }, { href: '/staff/profile', label: 'My profile', icon: UserRound }];
+const links = [{ href: '/staff/products', label: 'Products & stock', icon: Package }, { href: '/staff', label: 'Overview', icon: LayoutDashboard }, { href: '/staff/orders', label: 'Branch orders', icon: Package }, { href: '/staff/support', label: 'Order support', icon: MessageCircle }, { href: '/staff/redeem', label: 'Redeem voucher', icon: Gift }, { href: '/staff/notifications', label: 'Notifications', icon: Bell }, { href: '/staff/profile', label: 'My profile', icon: UserRound }];
 function useCount() { const id = useAuthStore(state => state.user?.id); return useQuery({ queryKey: ['staff','notifications',id,'count'], queryFn: getUnreadNotificationCount, refetchInterval: 30000 }); }
 export function StaffStudioShell({ children, logout }: { children: ReactNode; logout: () => void }) {
   const path = usePathname(); const user = useAuthStore(state => state.user); const count = useCount();

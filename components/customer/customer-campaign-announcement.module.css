@@ -4,3 +4,10 @@
 @media(max-width:600px){.banner{grid-template-columns:minmax(0,1fr);padding:26px 22px;gap:12px;border-radius:23px}.banner h2{font-size:25px;letter-spacing:-.6px}.bannerCopy>p{font-size:11px}.actions{margin-top:19px}.actions .primary{width:100%}.actions .secondary{flex:1}.actions .textLink{margin-left:auto}.banner>.art{min-height:170px;width:100%;max-width:320px;justify-self:center}.banner>.art .sparkle{right:32px}.banner .image{height:185px}.invite{flex-wrap:wrap;padding:23px 20px;gap:15px}.inviteIcon{width:45px;height:48px;border-radius:15px}.invite>div{flex-basis:70%}.invite h2{font-size:19px}.invite>a{width:100%}.dialog{padding:19px;max-width:calc(100vw - 22px);max-height:calc(100dvh - 22px);border-radius:23px}.dialog>header .eyebrow{font-size:7px;letter-spacing:1px}.modalCopy{padding:6px 3px}.modalCopy h2{font-size:27px;letter-spacing:-.6px}.modalCopy>p{font-size:12px}.modalArt .art{min-height:170px}.modalArt .image{height:180px}.modalActions{margin-top:22px}.failure{flex-wrap:wrap;padding:20px}.failure button{width:100%}}
 /* Keep link text legible against the green CTA despite the shop's inherited link colour. */
 .banner a.primary,.dialog a.primary{color:#fff;background:linear-gradient(120deg,#246e4b,#31804a)}
+
+/* Compact rewards rail keeps the catalogue close to the top. */
+.invite{position:relative;padding:18px 22px;border-radius:20px;background:radial-gradient(ellipse at 3% 0,#e7ffc0,transparent 55%),#fff;box-shadow:0 5px 24px #527a2810;gap:16px;margin-bottom:24px;overflow:hidden}
+.invite:before{content:"";position:absolute;left:0;top:15%;bottom:15%;width:3px;border-radius:4px;background:#8cce48;box-shadow:0 0 17px #90c94f}
+.invite h2{font-size:17px;margin:3px 0}.invite p{margin:0;line-height:1.6}.inviteIcon{width:43px;height:43px;border-radius:14px}.invite .eyebrow{font-size:8px}.invite>a{min-height:38px}
+@media(max-width:600px){.invite{padding:16px;gap:12px}.invite>div{flex:1}.invite h2{font-size:16px}.invite>a{width:auto;margin-left:55px}.invite .eyebrow{letter-spacing:1px}}
+@media(prefers-reduced-motion:reduce){.inviteIcon{animation:none!important}}

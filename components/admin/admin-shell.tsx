@@ -190,6 +190,7 @@ export function AdminShell({
       '/admin/orders',
       '/admin/support',
       '/admin/products',
+      '/admin/product-submissions',
       '/admin/inventory',
       '/admin/deliveries',
       '/admin/riders',
