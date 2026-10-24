@@ -1,19 +1,27 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Flame, Menu, X, ArrowUpRight, Sparkles, Store, LogOut, UserRound, MapPin, HelpCircle, ArrowRight, ShoppingBag, Package, Bell, Gift, Ticket } from 'lucide-react';
+import { Flame, Menu, X, ChevronRight, ArrowUpRight, Sparkles, Store, LogOut, UserRound, MapPin, HelpCircle, ArrowRight, ShoppingBag, Package, Bell, Gift, Ticket } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { getUnreadNotificationCount } from '@/lib/api/notifications';
 import { useAuthStore } from '@/stores/auth-store';
 import s from './customer.module.css';
+import h from './customer-header.module.css';
 import { CustomerRewardNotice } from './customer-reward-notice';
+import { useShoppingBranch } from './customer-branch';
 import { useCustomerCart } from '@/stores/customer-cart-store';
 
+function HeaderBranch({customer}:{customer:boolean}) {
+ const {branch}=useShoppingBranch();
+ return branch?<Link className={h.branchChip} href={customer?'/shop/profile#my-branch':'/shop#branches'}><MapPin size={14}/><span>{branch.name}</span><small>Change in profile</small></Link>:null;
+}
 export function CustomerShell({ children }: { children: React.ReactNode }) {
  const drawer = useRef<HTMLDialogElement>(null), closing = useRef(false);
  const [menuOpen, setMenuOpen] = useState(false);
  const pathname = usePathname();
+ const [hoveredNav,setHoveredNav]=useState<number|null>(null);
+ const activeNav=pathname.startsWith('/shop/orders')?1:pathname.startsWith('/shop/giveaways')||pathname.startsWith('/shop/vouchers')?2:0;
  const bagCount=useCustomerCart(v=>v.hydrated?v.items.length:0);
  useEffect(()=>useAuthStore.subscribe((next,previous)=>{if(previous.user&&(previous.user.id!==next.user?.id||next.user?.role!=='CUSTOMER'||next.user?.status!=='ACTIVE'))useCustomerCart.getState().clearBag();}),[]);
  const { user, hasHydrated, clearAuth } = useAuthStore();
@@ -44,10 +52,10 @@ export function CustomerShell({ children }: { children: React.ReactNode }) {
  if (pathname === '/shop/login' || pathname === '/shop/register') return <div className={s.surface}><main id="customer-content">{children}</main></div>;
  return <div className={s.surface} data-customer-effects="on" data-customer-design="navigation-v3">
   <a className={s.skip} href="#customer-content">Skip to content</a>
-  <header className={s.topbar}>
-   <div className={s.headerIdentity}><Link href="/shop" className={s.brand}><span><Flame size={23}/></span>MySureGas</Link><button className={s.menuButton} aria-label="Open customer menu" aria-haspopup="dialog" aria-expanded={menuOpen} aria-controls="customer-drawer" onClick={open}><Menu size={18}/><span>Menu</span><span className={s.menuSignal} aria-hidden="true"/></button></div>
-   <nav aria-label="Main navigation"><Link href="/shop" aria-current={pathname === '/shop' ? 'page' : undefined}>Shop</Link><Link href={customer ? "/shop/profile#my-branch" : "/shop#branches"}>My branch</Link><Link href="/shop/orders" aria-current={pathname === '/shop/orders' ? 'page' : undefined}>Your orders</Link><Link href="/shop/giveaways" aria-current={pathname === '/shop/giveaways' ? 'page' : undefined}>Giveaways</Link></nav>
-   <div className={s.headerActions}>{customer&&<Link href="/shop/notifications" className={s.headerBag} aria-label={unread.isSuccess&&!unread.isError?`Notifications, ${unread.data} unread`:"Notifications"}><Bell size={18}/>{unread.isSuccess&&!unread.isError&&unread.data>0&&<small>{unread.data>99?"99+":unread.data}</small>}</Link>}<Link href="/shop/cart" className={s.headerBag} aria-label={`Your bag, ${bagCount} products`}><ShoppingBag size={18}/><span>Bag</span>{bagCount>0&&<small>{bagCount}</small>}</Link>{customer && <Link href="/shop/profile" className={s.customerBadge} aria-label="Your customer account"><span className={s.customerAvatar} aria-hidden="true">{initials}</span><div><small>Welcome back</small><strong>{name}</strong></div></Link>}{customer ? <button className={s.signin} onClick={clearAuth}><LogOut size={16}/>Sign out</button> : <Link className={s.signin} href="/shop/login"><UserRound size={16}/>Sign in<ArrowUpRight size={14}/></Link>}</div>
+  <header className={`${s.topbar} ${h.header}`}>
+   <div className={h.identity}><Link href="/shop" className={h.brand} aria-label="MySureGas shop"><span className={h.flame}><Flame size={28} strokeWidth={1.8}/><i/></span>MySureGas</Link><button className={h.menu} aria-label="Open customer menu" aria-haspopup="dialog" aria-expanded={menuOpen} aria-controls="customer-drawer" onClick={open}><Menu size={19}/></button></div>
+   <nav className={h.navigation} aria-label="Main navigation" style={{'--nav-index':hoveredNav??activeNav} as CSSProperties} onPointerLeave={()=>setHoveredNav(null)} onBlur={event=>{if(!event.currentTarget.contains(event.relatedTarget))setHoveredNav(null);}}><Link href="/shop" onPointerEnter={()=>setHoveredNav(0)} onFocus={()=>setHoveredNav(0)} aria-current={pathname === '/shop' ? 'page' : undefined}>Shop</Link><Link href="/shop/orders" onPointerEnter={()=>setHoveredNav(1)} onFocus={()=>setHoveredNav(1)} aria-current={pathname === '/shop/orders' ? 'page' : undefined}>Orders</Link><Link href="/shop/giveaways" onPointerEnter={()=>setHoveredNav(2)} onFocus={()=>setHoveredNav(2)} aria-current={pathname === '/shop/giveaways'||pathname === '/shop/vouchers' ? 'page' : undefined}>Rewards<span/></Link></nav>
+   <div className={h.actions}><HeaderBranch customer={!!customer}/>{customer&&<Link href="/shop/notifications" className={h.icon} aria-label={unread.isSuccess&&!unread.isError?`Notifications, ${unread.data} unread`:"Notifications"}><Bell size={19}/>{unread.isSuccess&&!unread.isError&&unread.data>0&&<small>{unread.data>99?"99+":unread.data}</small>}</Link>}<Link href="/shop/cart" className={h.icon} aria-label={`Your bag, ${bagCount} products`}><ShoppingBag size={20}/>{bagCount>0&&<small>{bagCount}</small>}</Link><span className={h.divider}/>{customer ? <Link href="/shop/profile" className={h.account} aria-label={`Your customer account, ${name}`}><span className={h.avatar} aria-hidden="true"><span className={h.portrait}><i/><b/></span><small>{initials}</small></span><span className={h.accountName}><small>Your everyday energy</small><strong>{name}</strong></span><ChevronRight size={14}/></Link> : <Link className={h.signin} href="/shop/login"><UserRound size={17}/><span>Sign in</span></Link>}</div>
   </header>
   <dialog id="customer-drawer" ref={drawer} className={s.drawer} aria-label="Customer menu" onCancel={e => { e.preventDefault(); close(); }} onClick={e => { if (e.target !== e.currentTarget) return; const r = e.currentTarget.getBoundingClientRect(); if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) close(); }}>
    <header><div className={s.drawerBrand}><span className={s.brand}><span><Flame size={24}/></span>MySureGas</span><small>Your local shop, made simple.</small></div><button className={s.iconButton} aria-label="Close customer menu" onClick={close}><X size={22}/></button></header>

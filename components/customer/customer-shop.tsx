@@ -10,28 +10,28 @@ import { api, getApiErrorMessage } from '@/lib/api/client';
 import type { PublicBranch } from '@/types/branch';
 import type { Product, ProductListResponse } from '@/types/product';
 import s from './customer.module.css';
-import { CustomerCategoryMotion, CustomerProductShowcase } from './customer-motion';
+import { CustomerProductShowcase } from './customer-motion';
 import { CustomerBranchSettings, useShoppingBranch } from './customer-branch';
-import { CustomerWelcomeRibbon } from './customer-welcome';
-import e from './customer-experience.module.css';
+import { CustomerShopHero } from './customer-shop-hero';
+import h from './customer-home.module.css';
 import { CustomerCampaignAnnouncement } from './customer-campaign-announcement';
 const money=(value:number)=>new Intl.NumberFormat('en-NG',{style:'currency',currency:'NGN',maximumFractionDigits:2}).format(value);
 export function CustomerShop(){
- const {branch, loading, error, customer} = useShoppingBranch();
- const user = useAuthStore(v => v.user);
- return <><section className={e.shopHero}><div><span className={e.smallLabel}><Flame size={16}/> GOOD ENERGY, CLOSE TO HOME</span><h1>{customer ? `A brighter day, ${user?.firstName || 'neighbour'}.` : 'Make room for good energy.'}</h1><p>{branch ? `Your essentials, from ${branch.name}. Ready when you are.` : 'Cooking gas, cylinders and the essentials that keep your day moving.'}</p><a href={branch?'#catalogue':'#branches'} className={e.primary}>{branch?'Explore your branch':'Find your local branch'} <ArrowUpRight size={18}/></a>{branch&&<Link href="/shop/profile#my-branch" className={e.branchChip}><MapPin size={14}/>{branch.name}<span>Saved branch</span></Link>}</div><div className={e.explore}><CustomerCategoryMotion/></div></section>
- <CustomerWelcomeRibbon/>
+ const {branch, loading, error} = useShoppingBranch();
+ const [category,setCategory]=useState('ALL');
+ return <div className={h.home}><CustomerShopHero branch={branch} loading={loading} onCategory={setCategory}/>
  <CustomerCampaignAnnouncement/>
+ <div id="guide" className={h.guide} aria-label="How ordering works"><span><Flame size={16}/> Choose your refill</span><i>→</i><span><Package size={16}/> Add your cylinder photo</span><i>→</i><span><MapPin size={16}/> Follow your delivery</span></div>
  {!branch&&!loading&&<CustomerBranchSettings initial/>}
- <section id="catalogue" className={s.catalogue}><header><div><span className={s.eyebrow}>THE EVERYDAY COLLECTION</span><h2>{branch?`At ${branch.name}`:'Find your everyday favourites'}</h2></div>{branch&&<Link href="/shop/profile#my-branch" className={s.changeBranch}>My branch settings ↗</Link>}</header>{branch?<BranchCatalogue key={branch.id} branch={branch}/>:<div className={s.empty}><MapPin size={32}/><h3>{loading?'Getting your branch ready…':error?'Your branch couldn’t load.':'A little closer to home.'}</h3><p>{loading?'Your saved branch will appear here.':error?'Use Retry in the branch card above.':'Select a branch once to see its products and local prices.'}</p></div>}</section></>;
+ <section id="catalogue" className={s.catalogue}><header><div><span className={s.eyebrow}>THE EVERYDAY COLLECTION</span><h2>What do you need today?</h2></div>{branch&&<Link href="/shop/profile#my-branch" className={s.changeBranch}>My branch settings ↗</Link>}</header>{branch?<BranchCatalogue key={branch.id} branch={branch} type={category} onTypeChange={setCategory}/>:<div className={s.empty}><MapPin size={32}/><h3>{loading?'Getting your branch ready…':error?'Your branch couldn’t load.':'A little closer to home.'}</h3><p>{loading?'Your saved branch will appear here.':error?'Use Retry in the branch card above.':'Select a branch once to see its products and local prices.'}</p></div>}</section></div>;
 }
 function ProductVisual({product}:{product:Product}){const image=product.images?.find(i=>i.isPrimary)??product.images?.[0];const [failed,setFailed]=useState(false);const Icon=product.type==='GAS'?Flame:product.type==='ENGINE_OIL'||product.type==='BRAKE_OIL'?Droplets:Package;return <div className={s.productVisual}>{image&&!failed?<Image src={image.url} alt={image.altText??product.name} width={480} height={480} unoptimized onError={()=>setFailed(true)}/>:<Icon size={83} strokeWidth={1.1} aria-hidden="true"/>}<span>{product.type==='GAS'?'COOKING GAS':product.type==='CYLINDER'?'CYLINDERS':'EVERYDAY ESSENTIALS'}</span></div>;}
-function BranchCatalogue({branch}:{branch:PublicBranch}){
+function BranchCatalogue({branch,type,onTypeChange:setType}:{branch:PublicBranch;type:string;onTypeChange:(type:string)=>void}){
  const now=useCustomerClock();
  const bag=useCustomerCart(),user=useAuthStore(v=>v.user);
  const [amount,setAmount]=useState('1'),[added,setAdded]=useState('');
  const locked=bag.reserving||Boolean(user&&(bag.checkouts[user.id]||(bag.uncertain[user.id]??0)>now));
- const [search,setSearch]=useState(''),[type,setType]=useState('ALL'),[sort,setSort]=useState('name'),[selected,setSelected]=useState<Product|null>(null);const dialog=useRef<HTMLDialogElement>(null);
+ const [search,setSearch]=useState(''),[sort,setSort]=useState('name'),[selected,setSelected]=useState<Product|null>(null);const dialog=useRef<HTMLDialogElement>(null);
  const query=useQuery({queryKey:['customer','public-products',branch.id],queryFn:async({signal})=>(await api.get<ProductListResponse>('/products',{params:{branchId:branch.id},signal})).data.data.products.filter(p=>p.isActive&&p.branchId===branch.id),retry:false});
  const products=(query.data??[]).filter(p=>(type==='ALL'||p.type===type)&&`${p.name} ${p.description??''} ${p.category?.name??''}`.toLowerCase().includes(search.trim().toLowerCase())).sort((a,b)=>sort==='low'?a.pricePerUnit-b.pricePerUnit:sort==='high'?b.pricePerUnit-a.pricePerUnit:a.name.localeCompare(b.name));
  function open(product:Product){setAmount('1');setAdded('');setSelected(product);dialog.current?.showModal();}function close(){dialog.current?.close();setSelected(null);}
