@@ -1,0 +1,13 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+const mobile=path.dirname(fileURLToPath(import.meta.url)),root=path.dirname(mobile);
+const native=JSON.parse(fs.readFileSync(path.join(mobile,'package.json'),'utf8')),web=JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8'));
+const checks=[];const check=(name,ok)=>checks.push({check:name,status:ok?'PASS':'MISSING'});
+for(const plugin of ['@capacitor/core','@capacitor/app','@capacitor/browser','@capacitor/camera','@capacitor/geolocation'])check(`${plugin}: matching web/native versions`,Boolean(native.dependencies[plugin]&&native.dependencies[plugin]===web.dependencies[plugin]));
+for(const file of ['assets/app-icon-1024.png','assets/splash-2732.png','prepare-platforms.mjs'])check(file,fs.existsSync(path.join(mobile,file)));
+check('Native static shop bundle',fs.existsSync(path.join(root,'out/shop/index.html')));
+console.table(checks);
+console.log('These checks verify source preparation, not store approval or physical-device behavior.');
+console.log('Before a store release: confirm client bundle ID, native API origins, device tests, payment return, notification credentials, privacy disclosures and signing.');
+if(checks.some(check=>check.status!=='PASS'))process.exitCode=1;

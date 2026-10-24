@@ -1,4 +1,5 @@
 'use client';
+import { getDevicePosition } from '@/lib/native/device';
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
@@ -80,9 +81,8 @@ function AddressEditor({ address, busy, uncertain, onSave, onClose, onRecheck }:
   function locate() {
     if (locating || busy || uncertain) return;
     setLocationError('');
-    if (!navigator.geolocation) { setLocationError('Location is unavailable in this browser. You can still save the written address.'); return; }
     const token = ++request.current.generation; setLocating(true);
-    navigator.geolocation.getCurrentPosition(position => {
+    getDevicePosition(position => {
       if (request.current.generation !== token) return;
       const { latitude, longitude, accuracy } = position.coords;
       if (!hasPoint({ latitude, longitude })) { setLocationError('Your phone returned an invalid location. Try again or save the written address.'); setLocating(false); return; }

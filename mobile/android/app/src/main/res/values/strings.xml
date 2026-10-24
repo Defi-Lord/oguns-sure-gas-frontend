@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">MySureGas</string>
+    <string name="title_activity_main">MySureGas</string>
+    <string name="package_name">com.mysuregas.customer</string>
+    <string name="custom_url_scheme">com.mysuregas.customer</string>
+</resources>

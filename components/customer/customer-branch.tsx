@@ -1,4 +1,5 @@
 'use client';
+import { getDevicePosition } from '@/lib/native/device';
 import { useRef, useState } from 'react';
 import Link from 'next/link';
 import { create } from 'zustand';
@@ -48,9 +49,8 @@ export function CustomerBranchSettings({ initial = false }: { initial?: boolean 
     finally { useCustomerCart.getState().setReserving(false); lock.current = false; setBusy(false); }
   }
   function nearby() {
-    if (!navigator.geolocation) { setError('Location is unavailable. Choose a branch from the list.'); return; }
     setLocating(true); setError('');
-    navigator.geolocation.getCurrentPosition(({ coords }) => {
+    getDevicePosition(({ coords }) => {
       setLocating(false);
       const rad = (v: number) => v * Math.PI / 180;
       const nearest = state.branches.data?.filter(b => b.latitude !== null && b.longitude !== null).map(b => {
