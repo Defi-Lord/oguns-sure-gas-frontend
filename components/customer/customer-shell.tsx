@@ -2,12 +2,14 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Flame, Menu, X, ChevronRight, ArrowUpRight, Sparkles, Store, LogOut, UserRound, MapPin, HelpCircle, ArrowRight, ShoppingBag, Package, Bell, Gift, Ticket } from 'lucide-react';
+import { Flame, Menu, X, ChevronRight, House, ArrowUpRight, Sparkles, Store, LogOut, UserRound, MapPin, HelpCircle, ArrowRight, ShoppingBag, Package, Bell, Gift, Ticket } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { getUnreadNotificationCount } from '@/lib/api/notifications';
 import { useAuthStore } from '@/stores/auth-store';
 import s from './customer.module.css';
 import h from './customer-header.module.css';
+import m from './customer-app.module.css';
+import { CustomerPwa } from './customer-pwa';
 import { CustomerRewardNotice } from './customer-reward-notice';
 import { useShoppingBranch } from './customer-branch';
 import { useCustomerCart } from '@/stores/customer-cart-store';
@@ -50,7 +52,8 @@ export function CustomerShell({ children }: { children: React.ReactNode }) {
   ...(!customer ? [{ href: '/shop/login', title: 'Sign in', note: 'Continue with your customer account', icon: UserRound }, { href: '/shop/register', title: 'Create an account', note: 'Make yourself at home', icon: Sparkles }] : []),
  ];
  if (pathname === '/shop/login' || pathname === '/shop/register') return <div className={s.surface}><main id="customer-content">{children}</main></div>;
- return <div className={s.surface} data-customer-effects="on" data-customer-design="navigation-v3">
+ return <div className={`${s.surface} ${m.app}`} data-customer-effects="on" data-customer-design="navigation-v3">
+  <CustomerPwa/>
   <a className={s.skip} href="#customer-content">Skip to content</a>
   <header className={`${s.topbar} ${h.header}`}>
    <div className={h.identity}><Link href="/shop" className={h.brand} aria-label="MySureGas shop"><span className={h.flame}><Flame size={28} strokeWidth={1.8}/><i/></span>MySureGas</Link><button className={h.menu} aria-label="Open customer menu" aria-haspopup="dialog" aria-expanded={menuOpen} aria-controls="customer-drawer" onClick={open}><Menu size={19}/></button></div>
@@ -66,6 +69,7 @@ export function CustomerShell({ children }: { children: React.ReactNode }) {
    <div className={s.drawerBottom}>{customer && <button className={s.button} onClick={() => { clearAuth(); close(); }}><LogOut size={17}/>Sign out</button>}<span className={s.drawerSignature}><Flame size={12}/> A brighter everyday.</span></div>
   </dialog>
   <main id="customer-content" className={s.content}>{customer&&pathname!=='/shop/vouchers'&&<CustomerRewardNotice key={user.id} owner={user.id}/>} {children}</main>
+  <nav className={m.bottomTabs} aria-label="Customer app navigation">{[{href:'/shop',label:'Shop',icon:House,active:pathname==='/shop'},{href:'/shop/orders',label:'Orders',icon:Package,active:pathname.startsWith('/shop/orders')},{href:'/shop/giveaways',label:'Rewards',icon:Gift,active:pathname.startsWith('/shop/giveaways')||pathname.startsWith('/shop/vouchers')},{href:customer?'/shop/profile':'/shop/login',label:'Profile',icon:UserRound,active:pathname.startsWith('/shop/profile')}].map(({href,label,icon:Icon,active})=><Link key={label} href={href} aria-current={active?'page':undefined}><Icon size={22}/><span>{label}</span><i/></Link>)}</nav>
   <footer className={s.footer}><Link href="/shop" className={s.brand}><Flame size={20}/>MySureGas</Link><p>Cooking gas, cylinders and oils.</p></footer>
  </div>;
 }

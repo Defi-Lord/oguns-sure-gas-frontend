@@ -1,5 +1,6 @@
 import type {
   Metadata,
+  Viewport,
 } from 'next';
 
 import './globals.css';
@@ -11,7 +12,11 @@ import {
   AppProviders,
 } from '@/components/providers/app-providers';
 
+export const viewport:Viewport={width:'device-width',initialScale:1,viewportFit:'cover',themeColor:'#fffef9'};
+
 export const metadata: Metadata = {
+  manifest:'/manifest.webmanifest',
+  appleWebApp:{capable:true,title:'MySureGas',statusBarStyle:'default'},
   title: {
     default: "MySureGas",
     template: "%s | MySureGas",

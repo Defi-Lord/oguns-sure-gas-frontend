@@ -1,0 +1,12 @@
+import {spawnSync} from 'node:child_process';
+import path from 'node:path';
+import fs from 'node:fs';
+import {fileURLToPath} from 'node:url';
+import {createRequire} from 'node:module';
+const resolve=createRequire(import.meta.url).resolve;
+const root=fileURLToPath(new URL('../',import.meta.url));
+const env={...process.env,MYSUREGAS_NATIVE_EXPORT:'1',NEXT_PUBLIC_NATIVE_BUILD:'1'};
+const result=spawnSync(process.execPath,[resolve('next/dist/bin/next'),'build'],{cwd:root,env,stdio:'inherit'});
+if(result.status!==0)process.exit(result.status||1);
+if(!fs.existsSync(path.join(root,'out/shop/index.html')))throw Error('Native shop export is missing.');
+console.log('NATIVE WEB BUNDLE: PASS. Output: out/. Use mobile/ for native platform projects.');

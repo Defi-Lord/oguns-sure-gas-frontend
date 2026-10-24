@@ -10,6 +10,8 @@ const eslintConfig = defineConfig([
     // Default ignores of eslint-config-next:
     ".next/**",
     "out/**",
+    "mobile/android/**",
+    "mobile/ios/**",
     "build/**",
     "next-env.d.ts",
     // Archived stage snapshots are not application source.
