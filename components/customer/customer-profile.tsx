@@ -1,4 +1,5 @@
 'use client';
+import { announceQuick } from '@/lib/experience/moment-policy';
 import { getDevicePosition } from '@/lib/native/device';
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
@@ -51,7 +52,7 @@ function ProfileForm({ user }: { user: AuthUser }) {
       if (updated.id !== user.id || updated.role !== 'CUSTOMER' || updated.status !== 'ACTIVE') { setError('Your account changed. Sign in again to continue.'); return; }
       const current = useAuthStore.getState(), merged = { ...current.user!, ...updated };
       current.setUser(merged); client.setQueryData(['customer', 'profile', user.id], merged);
-      setEdits({}); setNotice('Your profile has been saved.');
+      setEdits({}); setNotice('Your profile has been saved.'); announceQuick(user.id,'Looking good!','Your profile changes are saved.');
     } catch (cause) { if (activeOwner(user.id, version)) setError(getApiErrorMessage(cause)); }
     finally { lock.current = false; setBusy(false); }
   }
@@ -141,7 +142,7 @@ function AddressBook({ owner }: { owner: string }) {
       }
       if (!activeOwner(owner, version)) return;
       if (saved.userId !== owner) throw new Error('This address could not be verified for your account. Refresh your addresses.');
-      setEditor(null); setNotice(existing ? 'Your address has been updated.' : 'Your delivery address has been saved.');
+      setEditor(null); setNotice(existing ? 'Your address has been updated.' : 'Your delivery address has been saved.'); announceQuick(owner,'You’re on the map',existing?'Your delivery address is updated.':'Your delivery address is saved.');
       await client.invalidateQueries({ queryKey: ['customer', 'addresses', owner] });
     });
   }

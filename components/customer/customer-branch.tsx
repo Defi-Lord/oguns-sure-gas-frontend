@@ -1,4 +1,5 @@
 'use client';
+import { announceQuick } from '@/lib/experience/moment-policy';
 import { getDevicePosition } from '@/lib/native/device';
 import { useRef, useState } from 'react';
 import Link from 'next/link';
@@ -44,7 +45,7 @@ export function CustomerBranchSettings({ initial = false }: { initial?: boolean 
         client.setQueryData(['customer', 'branch-preference', owner, version], result);
       } else { if (!sameSession()) return; state.guest.set(branch.id); }
       if (replace && bag.items.length > 0 && bag.branch?.id !== branch.id && bagFingerprint(useCustomerCart.getState()) === fingerprint) useCustomerCart.getState().clearBag();
-      setCandidate(null); setNotice(`${branch.name} is now your shopping branch.`);
+      setCandidate(null); setNotice(`${branch.name} is now your shopping branch.`); if(owner)announceQuick(owner,'A little closer to home',`${branch.name} is now your saved branch.`);
     } catch (cause) { if (sameSession()) { setError(getApiErrorMessage(cause)); if (owner) void client.invalidateQueries({ queryKey: ['customer', 'branch-preference', owner, version] }); } }
     finally { useCustomerCart.getState().setReserving(false); lock.current = false; setBusy(false); }
   }

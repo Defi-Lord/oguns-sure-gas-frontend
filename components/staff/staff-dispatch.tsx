@@ -1,4 +1,5 @@
 'use client';
+import { announceMoment } from '@/lib/experience/moment-policy';
 import { useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { PackageCheck, RefreshCw, Truck } from 'lucide-react';
@@ -13,7 +14,7 @@ export function StaffDispatch({orderId,status,paid,onUpdated}:{orderId:string;st
  const riders=useQuery({queryKey:['staff','available-riders',owner],queryFn:async()=> (await api.get<{data:{riders:Rider[]}}>('/orders/staff/available-riders')).data.data.riders,enabled:paid&&status==='READY_FOR_PICKUP',staleTime:0,refetchInterval:15000,retry:false});
  async function act(path:string,body:object,success:string){
   if(lock.current)return;lock.current=true;setBusy(true);setError('');setMessage('');
-  try {await api.post(`/orders/staff/${orderId}/${path}`,body);setChosen('');setMessage(success);}
+  try {await api.post(`/orders/staff/${orderId}/${path}`,body);setChosen('');setMessage(success);if(owner&&useAuthStore.getState().user?.id===owner)announceMoment(owner,{key:`dispatch:${orderId}:${crypto.randomUUID()}`,kind:path==='assign-rider'?'assignment':'gentle',title:path==='assign-rider'?'Rider assigned!':'Order updated',message:success,duration:path==='assign-rider'?2800:1800,variant:'saved'});}
   catch(e){setError(getApiErrorMessage(e)+' Refresh the order before trying again.');}
   finally {await Promise.allSettled([client.invalidateQueries({queryKey:['staff','orders',owner]}),client.invalidateQueries({queryKey:['staff','available-riders',owner]}),onUpdated()]);lock.current=false;setBusy(false);}
  }

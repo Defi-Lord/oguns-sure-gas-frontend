@@ -1,4 +1,5 @@
 'use client';
+import { announceQuick } from '@/lib/experience/moment-policy';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
@@ -23,7 +24,7 @@ function EntryCard({campaign,owner}:{campaign:Campaign;owner:string}){
  const value=entry.data,link=safeLink(campaign.popupCtaUrl??(campaign as Campaign & {popup?:{ctaUrl?:string|null}}).popup?.ctaUrl??null),hasInstructions=Boolean(campaign.description?.trim()||link),ended=campaign.status!=='ACTIVE'||Boolean(campaign.endsAt&&Date.parse(campaign.endsAt)<=now),full=campaign.maxWinners!==null&&campaign.winnerCount>=campaign.maxWinners;
  async function submit(event:FormEvent<HTMLFormElement>){event.preventDefault();if(lock.current||entry.isError||entry.isPending||value||ended||full||uncertain)return;setError('');setNotice('');const url=safeLink(proof.trim());if(!url||proof.trim().length>2000||!confirmed){setError('Add a valid HTTPS proof link and confirm you completed the listed tasks.');return;}
  const version=useAuthStore.getState().sessionVersion;if(!isOwner(owner,version))return;lock.current=true;setBusy(true);
- try{await api.post(`/campaigns/${campaign.id}/enter`,{taskProofUrl:url});if(!isOwner(owner,version))return;setNotice('Your entry has been submitted for review.');await entry.refetch();}
+ try{await api.post(`/campaigns/${campaign.id}/enter`,{taskProofUrl:url});if(!isOwner(owner,version))return;setNotice('Your entry has been submitted for review.');announceQuick(owner,'Your entry is in!','Your tasks are awaiting review. This is not a winning confirmation.','entry');await entry.refetch();}
  catch(cause){if(isOwner(owner,version)){setError(getApiErrorMessage(cause));setUncertain(true);}}
  finally{lock.current=false;setBusy(false);}}
  async function checkEntry(){const version=useAuthStore.getState().sessionVersion;const result=await entry.refetch();if(!isOwner(owner,version))return;if(!result.isError){setUncertain(false);setError('');setNotice(result.data?'Your saved entry is shown below.':'No entry is saved yet. You can submit again.');}}

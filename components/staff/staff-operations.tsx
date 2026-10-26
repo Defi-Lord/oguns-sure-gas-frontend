@@ -1,4 +1,5 @@
 'use client';
+import { announceMoment } from '@/lib/experience/moment-policy';
 
 import { useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
@@ -48,8 +49,9 @@ export function StaffRedeem() {
     if (lock.current) return;
     lock.current = true; setPending(true); setError(null);
     try {
+      const actorId=useAuthStore.getState().user?.id;
       const response = await api.post<{ data: Receipt }>('/vouchers/redeem', { [mode]: value.trim() }, { timeout: 45_000 });
-      setReceipt(response.data.data); setScanNotice(false); setValue(''); setReview(false);
+      setReceipt(response.data.data);const owner=useAuthStore.getState().user;if(owner?.role==='STAFF'&&owner.id===actorId)announceMoment(owner.id,{key:`redeemed:${response.data.data.redemption.id}`,kind:'success',title:'Reward redeemed!',message:`${response.data.data.voucher.rewardName} · Redemption recorded successfully.`,duration:3000}); setScanNotice(false); setValue(''); setReview(false);
     } catch (cause) { setError(cause); setReview(false); }
     finally { lock.current = false; setPending(false); }
   }

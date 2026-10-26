@@ -8,3 +8,5 @@
 :global([data-rider-effects=off]) .card,:global([data-rider-effects=off]) .card::before,:global([data-rider-effects=off]) .dot{animation:none}
 @media(max-width:700px){.card{padding:22px;gap:16px;flex-wrap:wrap}.symbol{width:49px;height:49px;border-radius:16px}.copy{flex-basis:calc(100% - 70px)}.copy h2{font-size:20px}.controls{width:100%;padding-left:65px}}
 @media(max-width:360px){.card{padding:18px;gap:12px}.copy{flex-basis:calc(100% - 61px)}.controls{padding-left:0}}
+
+@media(max-width:700px){.card{padding:16px;margin-bottom:16px;gap:12px;border-radius:21px;display:flex;flex-wrap:wrap}.symbol{width:39px;height:39px;border-radius:13px}.symbol svg{width:23px;height:23px}.copy{flex:1;min-width:145px}.copy h2{font-size:18px;margin:5px 0}.copy small{font-size:8px;letter-spacing:1px}.copy p{font-size:11px;line-height:1.5}.controls{width:100%;justify-content:space-between;border-top:1px solid #c9e7d0;padding-top:12px;font-size:11px}}

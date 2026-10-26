@@ -7,6 +7,7 @@ import { api, getApiErrorMessage } from '@/lib/api/client';
 import type { Delivery, DeliveryResponse } from '@/types/delivery';
 import { useRiderUser } from './rider-workspace';
 import s from './rider-actions.module.css';
+import { announceMoment } from '@/lib/experience/moment-policy';
 import { RiderTracking } from './rider-tracking';
 import { RiderPhotoInput } from './rider-photo-input';
 
@@ -39,7 +40,10 @@ export function RiderActions({delivery,onRefresh}:{delivery:Delivery;onRefresh:(
    if(version(fresh)!==intent.version){await onRefresh();setIntent(null);setError('This delivery changed. Review the refreshed details before choosing an action.');return;}
    const body={...intent.body};
    if(intent.photo&&intent.photoStage){const form=new FormData();form.append('photo',intent.photo);setNotice('Uploading cylinder photo…');const uploaded=(await api.post<{data:{photo:{url:string}}}>(`/deliveries/${delivery.id}/gas-verification/photos/${intent.photoStage}`,form,{headers:{'Content-Type':undefined}})).data.data.photo;body[intent.photoStage==='pickup'?'pickupPhotoUrl':'deliveryPhotoUrl']=uploaded.url;}
-   sent=true;await api[intent.method](intent.path,body);setIntent(null);setNotice('Saved. Refreshing your delivery…');
+   sent=true;await api[intent.method](intent.path,body);
+   const stage=String(body.status??'');
+   if(['PICKED_UP','IN_TRANSIT','DELIVERED'].includes(stage)) announceMoment(user.id,{key:`RIDER:${delivery.order.id}:${stage}`,kind:'success',title:stage==='DELIVERED'?'Well done!':stage==='PICKED_UP'?'Pickup confirmed':'Journey started',message:stage==='DELIVERED'?`${delivery.order.orderNumber} delivered. Another doorstep, another smile.`:delivery.order.orderNumber,duration:stage==='DELIVERED'?3000:1000});
+   setIntent(null);setNotice('Saved. Refreshing your delivery…');
    await client.invalidateQueries({queryKey:['rider','deliveries',user.id]});await client.invalidateQueries({queryKey:['rider','delivery',user.id,delivery.id]});await onRefresh();setNotice('Your delivery is up to date.');
   }catch(e){setIntent(null);setError(`${getApiErrorMessage(e)}${sent?' Refresh the delivery to check whether the update was saved before trying again.':''}`);if(sent)await onRefresh();}
   finally{locked.current=false;setBusy(false);}
