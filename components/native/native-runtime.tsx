@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import type { PluginListenerHandle } from '@capacitor/core';
 import { isNativeDevice } from '@/lib/native/device';
-import { externalBrowserUrl, nativeDestination } from '@/lib/native/navigation';
+import { externalBrowserUrl, nativeDestination, nativeBackDestination } from '@/lib/native/navigation';
 export function NativeRuntime(){
  const router=useRouter(),queries=useQueryClient();const [error,setError]=useState('');
  useEffect(()=>{
@@ -26,13 +26,13 @@ export function NativeRuntime(){
    if(disposed)return;
    await track(App.addListener('appStateChange',state=>{if(state.isActive)refresh();}));
    await track(Browser.addListener('browserFinished',refresh));
-   await track(App.addListener('appUrlOpen',({url})=>{const path=nativeDestination(url);if(path){router.push(path);refresh();}}));
+   await track(App.addListener('appUrlOpen',({url})=>{const path=nativeDestination(url,location.pathname);if(path){router.push(path);refresh();}}));
    if((await import('@capacitor/core')).Capacitor.getPlatform()==='android')await track(App.addListener('backButton',({canGoBack})=>{
     const dialogs=document.querySelectorAll<HTMLDialogElement>('dialog[open]'),dialog=dialogs[dialogs.length-1];
     if(dialog){if(dialog.dispatchEvent(new Event('cancel',{cancelable:true})))dialog.close();return;}
-    if(canGoBack)window.history.back();else if(location.pathname.replace(/\/$/,'')!=='/shop')router.replace('/shop');else void App.minimizeApp();
+    if(canGoBack)window.history.back();else {const fallback=nativeBackDestination(location.pathname);if(fallback)router.replace(fallback);else void App.minimizeApp();}
    }));
-   const launch=await App.getLaunchUrl();const path=launch?nativeDestination(launch.url):null;if(path&&!disposed)router.replace(path);
+   const launch=await App.getLaunchUrl();const path=launch?nativeDestination(launch.url,location.pathname):null;if(path&&!disposed)router.replace(path);
   })().catch(()=>{if(!disposed)setError('Some device controls could not start. Reopen the app or contact support.');});
   return()=>{disposed=true;document.removeEventListener('click',external,true);for(const handle of handles)void handle.remove();};
  },[queries,router]);
