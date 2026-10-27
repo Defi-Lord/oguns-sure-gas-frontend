@@ -2,7 +2,6 @@
 
 import { createContext, useContext, useEffect, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowDownRight, Check, Flame, Loader2, Mail, Phone, RefreshCw, ShieldCheck, UserRound } from 'lucide-react';
 import { api, getApiErrorMessage } from '@/lib/api/client';
@@ -45,7 +44,7 @@ export function StaffWorkspace({ children }: { children: ReactNode }) {
     return <StaffLoading />;
   }
   if (user.role !== 'STAFF') {
-    return <StaffAccessMessage title="Staff account required" detail="This workspace is for staff accounts. Use your account's portal to continue." action={<><Link href="/admin/login" className="rounded-xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white">Admin sign-in</Link><button onClick={logout} className="px-4 py-3 text-sm font-semibold">Sign out</button></>} />;
+    return <StaffAccessMessage title="Staff account required" detail="This workspace is for staff accounts. Use your account's portal to continue." action={<button onClick={logout} className="rounded-xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white">Return to staff sign-in</button>} />;
   }
   if (session.isError) {
     return <StaffAccessMessage title="Unable to verify your session" detail={getApiErrorMessage(session.error)} action={<><button onClick={() => void session.refetch()} className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white"><RefreshCw className="size-4" /> Retry</button><button onClick={logout} className="px-4 py-3 text-sm font-semibold">Sign out</button></>} />;

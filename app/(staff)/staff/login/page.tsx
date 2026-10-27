@@ -1,5 +1,4 @@
-import Link from 'next/link';
-import { ArrowUpRight, LockKeyhole, ShieldCheck } from 'lucide-react';
+import { LockKeyhole, ShieldCheck } from 'lucide-react';
 import { LoginForm } from '@/components/auth/login-form';
 import { StaffBrand, StaffEnergyArt } from '@/components/staff/staff-brand';
 import styles from '@/components/staff/staff-design.module.css';
@@ -19,7 +18,6 @@ export default function StaffLoginPage() {
           <div className={styles.storyFooter}><span>Made for your branch team.</span><span>MySureGas · Staff portal</span></div>
         </section>
         <section className={styles.loginPanel} aria-labelledby="staff-login-heading">
-          <Link href="/admin/login" className={styles.topLink}>Admin sign-in <ArrowUpRight size={15} aria-hidden="true" /></Link>
           <div className={`${styles.formArea} ${styles.enter} ${styles.delay}`}>
             <span className={styles.iconTile}><LockKeyhole size={23} strokeWidth={1.6} aria-hidden="true" /></span>
             <h2 id="staff-login-heading">Welcome back.</h2>
