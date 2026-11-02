@@ -2,16 +2,17 @@
 import { announceQuick } from '@/lib/experience/moment-policy';
 import { getDevicePosition } from '@/lib/native/device';
 
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import Link from 'next/link';
+import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowUpRight, ArrowRight, Bell, Flame, Package, Check, CheckCheck, Home, Loader2, LocateFixed, MapPin, Pencil, Plus, RefreshCw, ShieldCheck, Sparkles, Star, Trash2, UserRound, X } from 'lucide-react';
+import { ArrowUpRight, Bell, Mail, Phone, ChevronRight, BriefcaseBusiness, Package, Check, CheckCheck, Home, Loader2, LocateFixed, MapPin, Pencil, Plus, RefreshCw, ShieldCheck, Star, Trash2, UserRound, X } from 'lucide-react';
 import { api, getApiErrorMessage } from '@/lib/api/client';
 import { useAuthStore } from '@/stores/auth-store';
 import type { AuthUser, MeResponse } from '@/types/auth';
 import c from './customer.module.css';
-import { CustomerBranchSettings } from './customer-branch';
+import { CustomerBranchSettings, useShoppingBranch } from './customer-branch';
 import s from './customer-profile.module.css';
 
 type Address = {
@@ -30,7 +31,38 @@ const activeOwner = (id: string, version: number) => {
   return current.user?.id === id && current.user.role === 'CUSTOMER' && current.user.status === 'ACTIVE' && current.sessionVersion === version;
 };
 
-function ProfileForm({ user }: { user: AuthUser }) {
+function ProfileSheet({ title, children, onClose, locked = false }: { title: string; children: ReactNode; onClose: () => void; locked?: boolean }) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  const heading = 'customer-profile-sheet-title';
+  useEffect(() => {
+    const el = dialog.current;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    el?.showModal();
+    return () => { el?.close(); document.body.style.overflow = overflow; previousFocus?.focus(); };
+  }, []);
+  return createPortal(<dialog ref={dialog} className={s.sheet} aria-labelledby={heading}
+    onCancel={event => { event.preventDefault(); if (!locked) onClose(); }}
+    onClick={event => { if (locked || event.target !== event.currentTarget) return; const rect = event.currentTarget.getBoundingClientRect(); if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) onClose(); }}>
+    <div className={s.sheetHandle} aria-hidden="true"/>
+    <header className={s.sheetHeader}><div><h2 id={heading}>{title}</h2><p>Keep your information up to date.</p></div><button type="button" className={s.iconButton} aria-label="Close profile settings" disabled={locked} onClick={onClose}><X size={20}/></button></header>
+    {children}
+  </dialog>, document.body);
+}
+
+function BranchSummary() {
+  const branch = useShoppingBranch();
+  const [editing, setEditing] = useState(false);
+  return <section id="my-branch" className={s.branchSummary} aria-label="Shopping branch">
+    <span className={s.cardIcon}><MapPin size={21}/></span>
+    <div><h2>Shopping branch</h2><p>{branch.loading ? 'Loading your branch…' : branch.error ? 'Your branch could not load' : branch.unavailable ? 'Choose an available branch' : branch.branch?.name ?? 'Choose your branch'}</p><small>{branch.branch ? 'Used for your next orders' : 'Save your local shopping branch'}</small></div>
+    <button type="button" className={s.textButton} onClick={() => setEditing(true)}>Change <ChevronRight size={17}/></button>
+    {editing && <ProfileSheet title="Your shopping branch" onClose={() => setEditing(false)}><CustomerBranchSettings sectionId="customer-profile-branch-editor"/></ProfileSheet>}
+  </section>;
+}
+
+function ProfileForm({ user, onClose, onBusy }: { user: AuthUser; onClose: () => void; onBusy: (busy: boolean) => void }) {
   const client = useQueryClient(), lock = useRef(false);
   const [edits, setEdits] = useState<Partial<Pick<AuthUser, 'firstName' | 'lastName' | 'phone'>>>({});
   const firstName = edits.firstName ?? user.firstName, lastName = edits.lastName ?? user.lastName, phone = edits.phone ?? user.phone ?? '';
@@ -45,24 +77,23 @@ function ProfileForm({ user }: { user: AuthUser }) {
     if (!Object.keys(body).length) { setNotice('Your details are already up to date.'); return; }
     const version = useAuthStore.getState().sessionVersion;
     if (!activeOwner(user.id, version)) return;
-    lock.current = true; setBusy(true);
+    lock.current = true; setBusy(true); onBusy(true);
     try {
       const updated = (await api.patch<MeResponse>('/users/me', body)).data.data.user;
       if (!activeOwner(user.id, version)) return;
       if (updated.id !== user.id || updated.role !== 'CUSTOMER' || updated.status !== 'ACTIVE') { setError('Your account changed. Sign in again to continue.'); return; }
       const current = useAuthStore.getState(), merged = { ...current.user!, ...updated };
       current.setUser(merged); client.setQueryData(['customer', 'profile', user.id], merged);
-      setEdits({}); setNotice('Your profile has been saved.'); announceQuick(user.id,'Looking good!','Your profile changes are saved.');
+      setEdits({}); announceQuick(user.id,'Looking good!','Your profile changes are saved.'); onClose();
     } catch (cause) { if (activeOwner(user.id, version)) setError(getApiErrorMessage(cause)); }
-    finally { lock.current = false; setBusy(false); }
+    finally { lock.current = false; setBusy(false); onBusy(false); }
   }
   return <form className={s.profileForm} onSubmit={event => void save(event)} aria-label="Customer profile form">
-    <div className={s.cardHeading}><span className={s.cardIcon}><UserRound size={21}/></span><div><h2>Your details</h2><p>A name and number your branch can reach.</p></div></div>
     <div className={s.names}><label>First name<input value={firstName} onChange={e => setEdits(v => ({ ...v, firstName: e.target.value }))} required minLength={2} maxLength={50} autoComplete="given-name" disabled={busy}/></label><label>Last name<input value={lastName} onChange={e => setEdits(v => ({ ...v, lastName: e.target.value }))} required minLength={2} maxLength={50} autoComplete="family-name" disabled={busy}/></label></div>
     <label>Phone number <small>Optional</small><input type="tel" value={phone} onChange={e => setEdits(v => ({ ...v, phone: e.target.value }))} maxLength={20} autoComplete="tel" placeholder="080…" disabled={busy}/></label><p className={s.hint}>Leave this empty to remove your profile phone number. Each delivery address can have its own number.</p>
     <label>Email address<input value={user.email} readOnly aria-readonly="true" autoComplete="email"/></label><p className={s.hint}>This email is used to sign in and cannot be changed here.</p>
     {error && <p className={s.error} role="alert">{error}</p>}{notice && <p className={s.notice} role="status"><Check size={16}/>{notice}</p>}
-    <div className={s.formActions}><button className={s.primary} disabled={busy}>{busy ? <Loader2 size={17} className={s.spin}/> : <Check size={17}/>} {busy ? 'Saving…' : 'Save profile'}</button></div>
+    <div className={s.formActions}><button className={s.primary} disabled={busy}>{busy ? <Loader2 size={17} className={s.spin}/> : <Check size={17}/>} {busy ? 'Saving…' : 'Save changes'}</button><button type="button" className={s.textButton} disabled={busy} onClick={onClose}>Cancel</button></div>
   </form>;
 }
 
@@ -170,38 +201,46 @@ function AddressBook({ owner }: { owner: string }) {
   function open(address: Address | null) { setEditor({ address }); setRemoving(null); setError(''); setNotice(''); }
   const own = (addresses.data ?? []).filter(a => a.userId === owner);
   return <section id="addresses" className={s.addressBook} aria-label="Saved delivery addresses">
-    <div className={s.addressHeading}><div className={s.cardHeading}><span className={s.cardIcon}><MapPin size={22}/></span><div><h2>Your delivery addresses</h2><p>Familiar places. Faster checkout.</p></div></div><button className={s.button} disabled={busy || Boolean(editor) || addresses.isError || addresses.isPending} onClick={() => open(null)}><Plus size={17}/> Add address</button></div>
-    <p className={s.addressIntro}>Save your home, workplace or another delivery location. Your default address is selected first when you check out.</p>
+    <div className={s.addressHeading}><div className={s.cardHeading}><span className={s.cardIcon}><MapPin size={22}/></span><div><h2>Delivery addresses</h2><p>{addresses.isPending ? 'Loading saved places…' : addresses.isError ? 'Your saved places' : `${own.length} saved ${own.length === 1 ? 'place' : 'places'}`}</p></div></div><button className={s.button} disabled={busy || Boolean(editor) || addresses.isError || addresses.isPending} onClick={() => open(null)}><Plus size={17}/> Add address</button></div>
     {notice && <p className={s.notice} role="status"><CheckCheck size={17}/>{notice}</p>}{error && <p className={s.error} role="alert">{error}</p>}
-    {editor && <AddressEditor key={editor.address?.id ?? 'new'} address={editor.address} busy={busy} uncertain={uncertain} onSave={save} onClose={() => { setEditor(null); setError(''); }} onRecheck={recheck}/>}
-    {addresses.isPending ? <div className={s.loading} role="status">Loading your saved addresses…<div className={s.skeleton}/></div> : addresses.isError ? <div className={s.empty} role="alert"><MapPin size={32}/><h3>Your addresses couldn’t load.</h3><p>{getApiErrorMessage(addresses.error)}</p><button className={s.button} onClick={() => void addresses.refetch()} disabled={busy}>Try again</button></div> : own.length === 0 ? <div className={s.empty}><span className={s.emptyOrb}><Home size={30}/></span><h3>Where should good energy go?</h3><p>Add your first delivery address. It will become your default automatically.</p>{!editor && <button className={s.primary} onClick={() => open(null)}><Plus size={17}/> Add your first address</button>}</div> : <div className={s.addressCards}>{own.map(address => <article key={address.id} className={s.addressCard} data-default={address.isDefault}>
-      <header><span className={s.addressIcon}><Home size={20}/></span><h3>{address.label}</h3>{address.isDefault && <span className={s.defaultBadge}><Star size={12}/> Default</span>}</header><p>{address.addressLine}</p><p>{address.area ? `${address.area}, ` : ''}{address.city}, {address.state}</p>{!address.area && <small>Choose a delivery area at checkout to complete this address.</small>}<small>{address.phone ? `Delivery phone: ${address.phone}` : 'No delivery phone saved'}</small>
+    {editor && <ProfileSheet title={editor.address ? `Edit ${editor.address.label}` : 'Add a delivery address'} locked={busy || uncertain} onClose={() => { setEditor(null); setError(''); }}><AddressEditor key={editor.address?.id ?? 'new'} address={editor.address} busy={busy} uncertain={uncertain} onSave={save} onClose={() => { setEditor(null); setError(''); }} onRecheck={recheck}/>{error && <p className={s.error} role="alert">{error}</p>}</ProfileSheet>}
+    {addresses.isPending ? <div className={s.loading} role="status">Loading your saved addresses…<div className={s.skeleton}/></div> : addresses.isError ? <div className={s.empty} role="alert"><MapPin size={32}/><h3>Your addresses couldn’t load.</h3><p>{getApiErrorMessage(addresses.error)}</p><button className={s.button} onClick={() => void addresses.refetch()} disabled={busy}>Try again</button></div> : own.length === 0 ? <div className={s.empty}><span className={s.emptyOrb}><Home size={30}/></span><h3>Where should good energy go?</h3><p>Add your first delivery address. It will become your default automatically.</p>{!editor && <button className={s.primary} onClick={() => open(null)}><Plus size={17}/> Add your first address</button>}</div> : <div className={s.addressCards}>{own.map(address => <details key={address.id} className={s.addressCard} data-default={address.isDefault}>
+      <summary><span className={s.addressIcon}>{address.label.toLowerCase().includes('work') ? <BriefcaseBusiness size={20}/> : <Home size={20}/>}</span><span className={s.addressName}>{address.label}<small>{address.area || address.city}</small></span>{address.isDefault && <span className={s.defaultBadge}><Star size={12}/> Default</span>}<ChevronRight className={s.addressChevron} size={18}/></summary><div className={s.addressExpanded}><p>{address.addressLine}</p><p>{address.area ? `${address.area}, ` : ''}{address.city}, {address.state}</p>{!address.area && <small>Choose a delivery area at checkout to complete this address.</small>}<small>{address.phone ? `Delivery phone: ${address.phone}` : 'No delivery phone saved'}</small>
       {hasPoint(address) && <a className={s.mapLink} href={mapUrl({ latitude: address.latitude!, longitude: address.longitude! })} target="_blank" rel="noopener noreferrer"><MapPin size={13}/> View saved location <ArrowUpRight size={13}/></a>}
       <div className={s.addressActions}><button className={s.textButton} disabled={busy || Boolean(editor)} onClick={() => open(address)} aria-label={`Edit ${address.label}`}><Pencil size={14}/> Edit</button>{!address.isDefault && <button className={s.textButton} disabled={busy || Boolean(editor)} onClick={() => void makeDefault(address)} aria-label={`Make ${address.label} default`}><Star size={14}/> Make default</button>}<button className={s.removeButton} disabled={busy || Boolean(editor)} onClick={() => { setRemoving(address.id); setError(''); setNotice(''); }} aria-label={`Remove ${address.label}`}><Trash2 size={14}/> Remove</button></div>
       {removing === address.id && <div className={s.confirm} role="group" aria-label={`Confirm removal of ${address.label}`}><strong>Remove {address.label}?</strong><p>You’ll need to add it again to use it for a future checkout. Addresses linked to an order may not be removable.</p><div><button className={s.button} disabled={busy} onClick={() => setRemoving(null)}>Keep address</button><button className={s.danger} disabled={busy} onClick={() => void remove(address)}>{busy ? 'Removing…' : 'Yes, remove'}</button></div></div>}
-    </article>)}</div>}
+    </div></details>)}</div>}
     <div className={s.addressFooter}><ShieldCheck size={16}/><span>Your addresses are saved to your customer account.</span><button className={s.textButton} disabled={busy || uncertain || addresses.isFetching} onClick={() => void addresses.refetch()}><RefreshCw size={14}/> Refresh addresses</button></div>
   </section>;
 }
 
 function Account({ user }: { user: AuthUser }) {
+  const [editing, setEditing] = useState(false), [saving, setSaving] = useState(false);
   const profile = useQuery({ queryKey: ['customer', 'profile', user.id], queryFn: async ({ signal }) => (await api.get<MeResponse>('/users/me', { signal })).data.data.user, retry: false, refetchOnWindowFocus: false });
   const verified = profile.data?.id === user.id && profile.data.role === 'CUSTOMER' && profile.data.status === 'ACTIVE';
   const display = verified ? profile.data! : user;
   return <div className={s.page}>
-    <header className={s.heading}><div><span className={s.eyebrow}>YOUR CUSTOMER SPACE · YOUR EVERYDAY</span><h1>Make yourself at home.</h1><p>Your details, your delivery locations, your good energy.</p></div><Link href="/shop" className={s.button}>Back to the shop <ArrowUpRight size={16}/></Link></header>
+    <header className={s.heading}><span className={s.eyebrow}>YOUR CUSTOMER SPACE</span><h1>Your profile</h1><p>Everything you need. Right where it belongs.</p></header>
     <section className={s.hero} aria-label="Your account overview">
-      <span className={s.heroLight} aria-hidden="true"/><span className={s.heroGrid} aria-hidden="true"/>
-      <div className={s.heroIdentity}><span className={s.memberBadge}><span/> YOUR EVERYDAY ENERGY</span><div className={s.identityRow}><div className={s.avatar} aria-hidden="true">{display.firstName[0]}{display.lastName[0]}</div><div><span className={s.eyebrow}>HELLO AGAIN</span><h2>{display.firstName} {display.lastName}</h2><p><ShieldCheck size={15}/> Your MySureGas customer account</p></div></div><p className={s.heroDescription}>Good energy starts with you. A little space for everything that makes your next delivery easier.</p><a className={s.heroEdit} href="#details">Update your details <ArrowRight size={16}/></a></div>
-      <div className={s.energyScene} aria-hidden="true"><span className={s.sceneRing}/><span className={s.sceneRingInner}/><div className={s.energyCore}><Flame size={55} strokeWidth={1.4}/><span>MySureGas</span></div><span className={s.sceneChip}><MapPin size={16}/> Your favourite places</span><span className={s.sceneChipTwo}><Sparkles size={16}/> A brighter everyday</span><span className={s.sceneDot}/></div>
-      <span className={s.orbit} aria-hidden="true"/>
+      <span className={s.avatar} aria-hidden="true">{display.firstName[0]}{display.lastName[0]}</span>
+      <div className={s.identity}><span className={s.eyebrow}>HELLO AGAIN</span><h2>{display.firstName} {display.lastName}</h2><p><ShieldCheck size={15}/> Customer account</p></div>
+      <button className={s.button} type="button" disabled={!verified || profile.isError} onClick={() => setEditing(true)}><Pencil size={16}/><span>Edit profile</span></button>
     </section>
-    <nav className={s.quickGrid} aria-label="Account shortcuts"><a href="#addresses" className={s.quickCard}><span className={s.quickIcon}><MapPin size={23}/></span><span><strong>Your places</strong><small>Save home, work & more</small></span><ArrowUpRight size={19}/></a><Link href="/shop/orders" className={s.quickCard}><span className={s.quickIcon}><Package size={23}/></span><span><strong>Your orders</strong><small>See how your delivery is going</small></span><ArrowUpRight size={19}/></Link><Link href="/shop/notifications" className={s.quickCard}><span className={s.quickIcon}><Bell size={23}/></span><span><strong>Your updates</strong><small>All your messages in one place</small></span><ArrowUpRight size={19}/></Link></nav>
-    <CustomerBranchSettings/><div className={s.profileGrid}><section id="details" className={s.panel}>{profile.isPending ? <div className={s.loading} role="status">Loading your profile…<div className={s.skeleton}/></div> : profile.isError ? <div className={s.empty} role="alert"><UserRound size={32}/><h2>Your profile couldn’t load.</h2><p>{getApiErrorMessage(profile.error)}</p><button className={s.button} onClick={() => void profile.refetch()}>Try again</button></div> : verified ? <ProfileForm user={profile.data!}/> : <div className={s.empty} role="alert"><h2>Your profile couldn’t be verified.</h2><p>Sign out and sign in with your active customer account.</p></div>}</section>
-      <aside className={s.side}><div className={s.care}><span className={s.careOrb}><ShieldCheck size={30}/></span><span className={s.eyebrow}>MADE FOR YOUR EVERYDAY</span><h2>Ready for the<br/> next refill?</h2><p>Keep your contact details current so your branch and rider can reach you when needed.</p><Link href="/shop" className={s.careCta}>Explore the shop <ArrowRight size={16}/></Link><p className={s.privacyNote}><ShieldCheck size={14}/> On a shared device, sign out when you’re done.</p></div><div className={s.shortcuts}><h2>Your everyday essentials</h2><a href="#addresses"><MapPin size={18}/><span>Saved addresses<small>Get ready for your next delivery</small></span><ArrowUpRight size={16}/></a><Link href="/shop/orders"><Home size={18}/><span>Your orders<small>Follow every delivery</small></span><ArrowUpRight size={16}/></Link><Link href="/shop/notifications"><Bell size={18}/><span>Your inbox<small>Stay close to every update</small></span><ArrowUpRight size={16}/></Link></div></aside>
-    </div><AddressBook owner={user.id}/>
+    <div className={s.overviewGrid}>
+      <section id="details" className={s.panel} aria-label="Your details"><h2>Your details</h2>
+        {profile.isPending ? <p className={s.loading} role="status">Loading your details…</p> : profile.isError ? <div className={s.error} role="alert"><p>{getApiErrorMessage(profile.error)}</p><button className={s.button} onClick={() => void profile.refetch()}>Try again</button></div> : !verified ? <p className={s.error} role="alert">Your account could not be verified. Sign out and sign in again.</p> : <>
+          <div className={s.detailRow}><Mail size={21}/><div><strong>Email</strong><span>{display.email}</span></div><span className={s.readonly}>Sign-in email</span></div>
+          <button type="button" className={s.detailRow} onClick={() => setEditing(true)}><Phone size={21}/><span><strong>Phone</strong><span>{display.phone || 'Add a phone number'}</span></span><ChevronRight size={18}/></button>
+        </>}
+      </section>
+      <BranchSummary/>
+      <AddressBook owner={user.id}/>
+      <nav className={s.shortcuts} aria-label="Account shortcuts"><Link href="/shop/orders"><Package size={20}/><span>Your orders</span><ChevronRight size={17}/></Link><Link href="/shop/notifications"><Bell size={20}/><span>Your inbox</span><ChevronRight size={17}/></Link></nav>
+    </div>
+    {editing && verified && <ProfileSheet title="Edit your details" locked={saving} onClose={() => setEditing(false)}><ProfileForm user={profile.data!} onClose={() => setEditing(false)} onBusy={setSaving}/></ProfileSheet>}
   </div>;
 }
+
 export function CustomerProfile() {
   const { user, hasHydrated } = useAuthStore();
   if (!hasHydrated) return <div className={s.loading} role="status">Preparing your account…</div>;
