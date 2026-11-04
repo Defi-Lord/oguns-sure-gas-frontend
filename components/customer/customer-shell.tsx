@@ -1,4 +1,5 @@
 'use client';
+import { CustomerEmailNotice } from './customer-account-email';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -51,7 +52,7 @@ export function CustomerShell({ children }: { children: React.ReactNode }) {
   { href: '/shop#guide', title: 'How to shop', note: 'A simple guide to getting started', icon: HelpCircle },
   ...(!customer ? [{ href: '/shop/login', title: 'Sign in', note: 'Continue with your customer account', icon: UserRound }, { href: '/shop/register', title: 'Create an account', note: 'Make yourself at home', icon: Sparkles }] : []),
  ];
- if (pathname === '/shop/login' || pathname === '/shop/register') return <div className={s.surface}><main id="customer-content">{children}</main></div>;
+ if (['/shop/login','/shop/register','/shop/forgot-password','/shop/reset-password','/shop/verify-email','/shop/account-email'].includes(pathname)) return <div className={s.surface}><main id="customer-content">{children}</main></div>;
  return <div className={`${s.surface} ${m.app}`} data-customer-effects="on" data-customer-design="navigation-v3">
   <CustomerPwa/>
   <a className={s.skip} href="#customer-content">Skip to content</a>
@@ -68,7 +69,7 @@ export function CustomerShell({ children }: { children: React.ReactNode }) {
    <div className={s.drawerJourney}><div><Sparkles size={15}/><span>A LITTLE GUIDE</span></div><h3>Your next step is simple.</h3><p>Your branch is remembered on your account. Manage it in your profile.</p><Link href={customer ? "/shop/profile#my-branch" : "/shop#branches"} onClick={close}>My branch<ArrowRight size={16}/></Link><div className={s.journeySteps} aria-hidden="true"><span>01 · Choose</span><i/><span>02 · Explore</span></div></div>
    <div className={s.drawerBottom}>{customer && <button className={s.button} onClick={() => { clearAuth(); close(); }}><LogOut size={17}/>Sign out</button>}<span className={s.drawerSignature}><Flame size={12}/> A brighter everyday.</span></div>
   </dialog>
-  <main id="customer-content" className={s.content}>{customer&&pathname!=='/shop/vouchers'&&<CustomerRewardNotice key={user.id} owner={user.id}/>} {children}</main>
+  <main id="customer-content" className={s.content}><CustomerEmailNotice/>{customer&&pathname!=='/shop/vouchers'&&<CustomerRewardNotice key={user.id} owner={user.id}/>} {children}</main>
   <nav className={m.bottomTabs} aria-label="Customer app navigation">{[{href:'/shop',label:'Shop',icon:House,active:pathname==='/shop'},{href:'/shop/orders',label:'Orders',icon:Package,active:pathname.startsWith('/shop/orders')},{href:'/shop/giveaways',label:'Rewards',icon:Gift,active:pathname.startsWith('/shop/giveaways')||pathname.startsWith('/shop/vouchers')},{href:customer?'/shop/profile':'/shop/login',label:'Profile',icon:UserRound,active:pathname.startsWith('/shop/profile')}].map(({href,label,icon:Icon,active})=><Link key={label} href={href} aria-current={active?'page':undefined}><Icon size={22}/><span>{label}</span><i/></Link>)}</nav>
   <footer className={s.footer}><Link href="/shop" className={s.brand}><Flame size={20}/>MySureGas</Link><p>Cooking gas, cylinders and oils.</p></footer>
  </div>;
