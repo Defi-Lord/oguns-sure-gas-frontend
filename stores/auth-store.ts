@@ -1,5 +1,6 @@
 'use client';
 
+import { clearBrowserPush } from '@/lib/notifications/push-session';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -39,7 +40,7 @@ interface AuthState {
 export const useAuthStore =
   create<AuthState>()(
     persist(
-      (set) => ({
+      (set, get) => ({
         user: null,
         accessToken: null,
         refreshToken: null,
@@ -48,6 +49,7 @@ export const useAuthStore =
         sessionVersion: 0,
 
         setAuth: (user, tokens) => {
+          if (get().user && (get().user?.id !== user.id || get().user?.role !== user.role)) clearBrowserPush(get().accessToken);
           set((state) => ({
             sessionVersion: state.sessionVersion + 1,
             user,
@@ -60,6 +62,7 @@ export const useAuthStore =
         },
 
         setUser: (user) => {
+          if (!user || (get().user && (get().user?.id !== user.id || get().user?.role !== user.role))) clearBrowserPush(get().accessToken);
           set({
             user,
             isAuthenticated:
@@ -77,6 +80,7 @@ export const useAuthStore =
         },
 
         clearAuth: () => {
+          clearBrowserPush(get().accessToken);
           set((state) => ({
             sessionVersion: state.sessionVersion + 1,
             user: null,

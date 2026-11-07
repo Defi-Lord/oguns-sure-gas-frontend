@@ -1,4 +1,5 @@
 'use client';
+import { PushAlerts } from '@/components/notifications/push-alerts';
 import { ProductNotificationLink } from '@/components/products/product-notification-link';
 import { SupportNotificationLink } from '@/components/support/support-notification-link';
 
@@ -833,6 +834,7 @@ export function NotificationsPage() {
   return (
     <>
       <div className="space-y-6">
+        <PushAlerts/>
         <section className="overflow-hidden rounded-[2rem] border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-cyan-50 p-6 shadow-sm md:p-8">
           <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
             <div className="max-w-3xl">

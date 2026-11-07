@@ -1,4 +1,5 @@
 'use client';
+import { PushAlerts } from '@/components/notifications/push-alerts';
 import { useRef, useState } from 'react';
 import Link from 'next/link';
 import { ProductNotificationLink } from '@/components/products/product-notification-link';
@@ -27,7 +28,7 @@ export function StaffInbox() {
   }
   function reset(){setSearch('');setType('');setUnread(false);}
   return <div className={s.page}>
-    <header className={s.heading}><div><span className={s.eyebrow}>YOUR TEAM · IN THE LOOP</span><h1>Your branch inbox.</h1><p>Stay close to every update, without losing focus.</p></div><button className={s.button} disabled={inbox.isFetching||count.isFetching} onClick={()=>void client.invalidateQueries({queryKey:['staff','notifications',id]})}><RefreshCw size={17} className={inbox.isFetching?s.spin:''} /> Refresh</button></header>
+    <header className={s.heading}><div><span className={s.eyebrow}>YOUR TEAM · IN THE LOOP</span><h1>Your branch inbox.</h1><p>Stay close to every update, without losing focus.</p></div><button className={s.button} disabled={inbox.isFetching||count.isFetching} onClick={()=>void client.invalidateQueries({queryKey:['staff','notifications',id]})}><RefreshCw size={17} className={inbox.isFetching?s.spin:''} /> Refresh</button></header><PushAlerts/>
     <section className={s.hero} data-staff-reveal><div className={s.heroIcon}><Bell size={32}/></div><div><span className={s.heroLabel}>STAFF NOTIFICATIONS</span><h2>{count.isSuccess?(count.data===0?'You’re all caught up.':`${count.data} unread update${count.data===1?'':'s'}.`):'Your updates, together.'}</h2><p>Orders, deliveries and account messages in one place.</p></div><Sparkles className={s.sparkle} size={60} aria-hidden="true"/></section>
     <section className={s.panel} aria-label="Staff inbox"><div className={s.toolbar}><div className={s.tabs}><button aria-pressed={!unread} onClick={()=>setUnread(false)}>All messages</button><button aria-pressed={unread} onClick={()=>setUnread(true)}>Unread {count.isSuccess&&<span>{count.data}</span>}</button></div><button className={s.button} disabled={busy||!count.isSuccess||!count.data} onClick={()=>void mark()}><CheckCheck size={17}/> {busy?'Updating…':'Mark all read'}</button></div>
     <div className={s.filters}><label className={s.search}><Search size={17}/><input aria-label="Search loaded notifications" placeholder="Search loaded messages…" value={search} onChange={event=>setSearch(event.target.value)}/></label><select aria-label="Notification type filter" value={type} onChange={event=>setType(event.target.value as NotificationType|'')}><option value="">All categories</option>{types.map(value=><option key={value} value={value}>{label(value)}</option>)}</select>{(search||type||unread)&&<button className={s.reset} onClick={reset}>Reset filters</button>}</div>

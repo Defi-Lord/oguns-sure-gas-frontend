@@ -5,6 +5,7 @@ import {
   QueryClientProvider,
 } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
+import { PushSessionRuntime } from '@/components/notifications/push-alerts';
 import { ExperienceMoments } from '@/components/experience/experience-moments';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -36,6 +37,7 @@ function SessionQueryProvider({
   return (
     <QueryClientProvider client={queryClient}>
       <ExperienceMoments />
+      <PushSessionRuntime />
       {children}
     </QueryClientProvider>
   );

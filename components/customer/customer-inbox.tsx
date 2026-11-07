@@ -1,4 +1,5 @@
 'use client';
+import { PushAlerts } from '@/components/notifications/push-alerts';
 import { useRef, useState } from 'react';
 import Link from 'next/link';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -34,6 +35,7 @@ function Inbox({id}:{id:string}) {
   function reset(){setSearch('');setType('');setUnread(false);}
   return <div className={s.page}>
     <header className={s.heading}><div><span className={s.eyebrow}>YOUR CUSTOMER SPACE · IN THE LOOP</span><h1>Your inbox.</h1><p>A little closer to every update.</p></div><button className={s.button} disabled={inbox.isFetching||count.isFetching} onClick={()=>void client.invalidateQueries({queryKey:['customer','notifications',id]})}><RefreshCw size={17} className={inbox.isFetching?s.spin:''} /> Refresh</button></header>
+    <PushAlerts/>
     <section className={s.hero}><div className={s.heroIcon}><Bell size={32}/></div><div><span className={s.heroLabel}>GOOD ENERGY · GOOD NEWS</span><h2>{count.isSuccess&&!count.isError?(count.data===0?'You’re all caught up.':`${count.data} unread update${count.data===1?'':'s'}.`):count.isError?'Unread count unavailable.':'Your updates, together.'}</h2><p>Orders, deliveries and a little good news. All together.</p></div><Sparkles className={s.sparkle} size={60} aria-hidden="true"/><span className={s.orbit} aria-hidden="true"/></section>
     <section className={s.panel} aria-label="Customer inbox"><div className={s.toolbar}><div className={s.tabs}><button aria-pressed={!unread} onClick={()=>setUnread(false)}>All messages</button><button aria-pressed={unread} onClick={()=>setUnread(true)}>Unread {count.isSuccess&&!count.isError&&<span>{count.data}</span>}</button></div><button className={s.button} disabled={busy||!count.isSuccess||count.isError||!count.data} onClick={()=>void mark()}><CheckCheck size={17}/> {busy?'Updating…':'Mark all read'}</button></div>
     <div className={s.filters}><label className={s.search}><Search size={17}/><input aria-label="Search loaded notifications" placeholder="Search loaded messages…" value={search} onChange={event=>setSearch(event.target.value)}/></label><select aria-label="Notification type filter" value={type} onChange={event=>setType(event.target.value as NotificationType|'')}><option value="">All categories</option>{types.map(value=><option key={value} value={value}>{label(value)}</option>)}</select>{(search||type||unread)&&<button className={s.reset} onClick={reset}>Reset filters</button>}</div>
