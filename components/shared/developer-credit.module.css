@@ -19,6 +19,8 @@
   background: radial-gradient(ellipse at 50% 100%, #cdf1c255, transparent 65%);
 }
 .signature {
+  color: inherit;
+  text-decoration: none;
   position: relative;
   isolation: isolate;
   display: flex;
@@ -93,3 +95,5 @@
   .star { display: none; }
 }
 @media(max-width:350px) { .signature { gap: 8px; padding: 11px; } .divider { margin: 0; } .note { font-size: 8px; } .label { font-size: 8px; } }
+
+.signature:focus-visible { outline: 3px solid #367650; outline-offset: 4px; }
