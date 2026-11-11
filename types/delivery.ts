@@ -10,7 +10,8 @@
 export type GasVerificationStatus =
   | 'PENDING'
   | 'VERIFIED'
-  | 'DISCREPANCY';
+  | 'DISCREPANCY'
+  | 'FAILED';
 
 export interface DeliveryCustomer {
   id: string;
@@ -36,6 +37,7 @@ export interface DeliveryProduct {
   id: string;
   name: string;
   sku: string;
+  type?: string;
 }
 
 export interface DeliveryItem {
@@ -80,7 +82,17 @@ export interface DeliveryBranch {
   state: string;
 }
 
+export type GasDiscrepancyCase = {
+  state: 'AWAITING_CUSTOMER' | 'ACCEPTED' | 'RETURN_FOR_CORRECTION' | 'RETURN_FOR_REFUND' |
+    'RETURN_FOR_DECISION' | 'AT_BRANCH_FOR_CORRECTION' | 'AT_BRANCH_FOR_DECISION' | 'CORRECTED' | 'REFUND_REVIEW' | null;
+  deadline: string | null;
+  expired: boolean;
+  version: string;
+  canAccept: boolean;
+};
+
 export interface GasVerification {
+  discrepancyCase?: GasDiscrepancyCase;
   id: string;
   deliveryId: string;
   expectedGasKg: number;

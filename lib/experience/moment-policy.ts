@@ -13,6 +13,7 @@ export function notificationMoment(n: Notice, role: string): Moment | null {
     return null;
   }
   if (role !== 'CUSTOMER') return null;
+  if (event === 'GAS_DISCREPANCY_ACTION_REQUIRED') return { key: `GAS:review:${orderId}:${str('caseVersion') || n.id}`, title: 'Check your gas weight', message: 'Open your order to choose what happens next.', kind: 'gentle', duration: 3000 };
   if (event === 'RIDER_TIP_THANKED') return { key: `thanks:${str('riderTipId') || n.id}`, title: `${str('riderName') || 'Your rider'} says thank you!`, message: `${order || 'Your delivery'} · Your kindness made their day.`, kind: 'thanks', duration: 4000 };
   if (event === 'CAMPAIGN_GIVEAWAY_WINNER') return { key: `winner:${str('voucherId') || str('campaignId') || n.id}`, title: 'You won a giveaway!', message: 'Your reward is waiting in My vouchers. Check its expiry and redemption details.', kind: 'reward', duration: 5000 };
   if (event === 'CAMPAIGN_ENTRY_QUALIFIED') return { key: `qualified:${str('campaignEntryId') || n.id}`, title: 'Your tasks are approved', message: 'Thank you for taking part. Winner selection is still pending.', kind: 'gentle', duration: 3500 };
