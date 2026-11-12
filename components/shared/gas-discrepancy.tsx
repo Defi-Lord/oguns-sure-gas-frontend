@@ -45,6 +45,7 @@ export function GasDiscrepancy({ deliveryId, orderId, gas, audience, total, refu
   const [weight, setWeight] = useState('');
   if (!item?.state) return null;
 
+  const awaitingRedeliveryWeight = item.state === 'CORRECTED' && gas.deliveryWeightKg == null;
   const customer = audience === 'customer';
   const awaiting = item.state === 'AWAITING_CUSTOMER' || item.state === 'AT_BRANCH_FOR_DECISION';
   const returning = ['RETURN_FOR_CORRECTION', 'RETURN_FOR_REFUND', 'RETURN_FOR_DECISION'].includes(item.state);
@@ -92,13 +93,17 @@ export function GasDiscrepancy({ deliveryId, orderId, gas, audience, total, refu
   return <section aria-label="Gas weight resolution" aria-busy={busy}
     className="my-4 space-y-3 rounded-2xl border border-amber-500/50 bg-amber-50/60 p-4 text-sm text-slate-900 dark:bg-amber-950/40 dark:text-slate-100">
     <h3 className="flex items-center gap-2 font-semibold"><AlertCircle size={17} aria-hidden="true"/>
-      {customer && awaiting ? 'Your decision is needed' : item.state === 'REFUND_REVIEW' && refunded ? 'Refund completed' : gasCaseLabel(item.state)}</h3>
-    <p>Ordered: <strong>{quantity(gas.expectedGasKg)}</strong> · Measured: <strong>{quantity(gas.gasSuppliedKg)}</strong></p>
+      {customer && awaiting ? 'Your decision is needed' : item.state === 'REFUND_REVIEW' && refunded ? 'Refund completed' : awaitingRedeliveryWeight ? 'Refill corrected · final weigh-in pending' : gasCaseLabel(item.state)}</h3>
+    <p>Ordered: <strong>{quantity(gas.expectedGasKg)}</strong>{!awaitingRedeliveryWeight && <> · Measured: <strong>{quantity(gas.gasSuppliedKg)}</strong></>}</p>
+    {awaitingRedeliveryWeight && <p>The rider will weigh the cylinder again before completing delivery.</p>}
     {customer && awaiting && <p>{item.canAccept
       ? `Accepting the measured amount keeps the order total at ${total}. No price adjustment applies.`
       : 'The measured amount cannot be accepted at the current price. Choose a return for correction or request a refund.'}</p>}
-    {returning && <p>The branch must confirm it physically received the order before the rider is released.</p>}
-    {item.state === 'REFUND_REVIEW' && <p>{refunded ? 'Your payment refund has been processed.' : 'The branch has received the order. Your refund has been requested.'}</p>}
+    {returning && <p>{item.state === 'RETURN_FOR_REFUND'
+      ? 'Refund review starts after the branch confirms the cylinder was returned.'
+      : 'The branch must confirm it physically received the order before the rider is released.'}</p>}
+    {!customer && item.state === 'AT_BRANCH_FOR_CORRECTION' && <p>Correct the refill first, then weigh the filled cylinder and enter its gross weight below. Assign an available rider after release.</p>}
+    {item.state === 'REFUND_REVIEW' && <p>{refunded ? 'Your payment refund has been processed.' : customer ? 'The branch received the order. Finance will review your refund request.' : 'Receipt confirmed. A super admin can review the payment under Finance → Refund review.'}</p>}
     {!customer && item.state === 'AWAITING_CUSTOMER' && item.deadline && <p>Decision deadline: {new Date(item.deadline).toLocaleString('en-NG')}</p>}
     {actions.includes('REWEIGH') && <label className="block">Corrected gross cylinder weight (kg)
       <input className="ml-2 rounded border px-2 py-1 dark:bg-slate-900" type="text" inputMode="decimal"
