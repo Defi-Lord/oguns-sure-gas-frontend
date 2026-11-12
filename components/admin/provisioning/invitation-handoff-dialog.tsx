@@ -150,20 +150,29 @@ export function InvitationHandoffDialog({
             Share this invitation securely with{' '}
             {invitation.account.firstName}{' '}
             {invitation.account.lastName}.
-            The account stays inactive until the
-            invitation is accepted and a password
-            is created.
+            After setting a password, they must wait
+            for a Super Admin to approve the account.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-5 px-6 py-6 sm:px-8">
           <div className="rounded-[22px] border border-emerald-100 bg-emerald-50/70 p-4">
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-700">
-              Pending activation
+              Awaiting acceptance
             </p>
 
             <p className="mt-2 font-semibold text-slate-900">
               {invitation.account.email}
+            </p>
+
+            <p role="status" className="mt-2 text-sm text-slate-700">
+              {invitation.emailStatus === 'QUEUED'
+                ? 'Invitation email queued. Delivery is not yet confirmed.'
+                : invitation.emailStatus === 'DISABLED'
+                  ? 'Invitation email is disabled. Share the secure link below.'
+                  : invitation.emailStatus === 'FAILED'
+                    ? 'Could not queue the email. Resend it or share the secure link below.'
+                    : 'Invitation email status is unavailable. You can share the secure link below.'}
             </p>
 
             <div className="mt-3 flex items-center gap-2 text-xs text-slate-600">
@@ -222,9 +231,7 @@ export function InvitationHandoffDialog({
             <p className="mt-2 text-sm leading-6 text-slate-600">
               Send the secure acceptance link.
               It opens the MySureGas password
-              setup screen and activates the
-              account only after successful
-              acceptance.
+              setup screen. Account approval happens separately.
             </p>
 
             <Button

@@ -165,6 +165,7 @@ export function AcceptManagedInvite() {
   };
 
   if (accepted) {
+    const active = accepted.account.status === 'ACTIVE';
     const isManager =
       accepted.account.role ===
       'BRANCH_MANAGER';
@@ -178,7 +179,7 @@ export function AcceptManagedInvite() {
             </div>
 
             <p className="mt-6 text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">
-              Account activated
+              {active ? 'Account activated' : 'Pending approval'}
             </p>
 
             <h1 className="mt-3 font-serif text-3xl font-semibold tracking-tight text-slate-950">
@@ -192,7 +193,7 @@ export function AcceptManagedInvite() {
               {isManager
                 ? 'Branch Manager'
                 : 'Rider'}{' '}
-              account is now active.
+              account {active ? 'is now active.' : 'is waiting for a Super Admin to approve it.'}
             </p>
 
             <div className="mt-6 rounded-[22px] border border-slate-200 bg-slate-50 p-4">
@@ -205,7 +206,11 @@ export function AcceptManagedInvite() {
               </p>
             </div>
 
-            {isManager ? (
+            {!active ? (
+              <p role="status" className="mt-6 rounded-[22px] border border-blue-100 bg-blue-50 p-4 text-sm leading-6 text-blue-700">
+                Your password is saved. You can sign in once your account is approved.
+              </p>
+            ) : isManager ? (
               <Link
                 href="/admin/login"
                 className="mt-6 inline-flex h-10 w-full items-center justify-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
@@ -246,7 +251,7 @@ export function AcceptManagedInvite() {
             Create your password to accept this
             managed account invitation. The
             invitation can only be used while the
-            account is still pending activation.
+            account is awaiting setup or administrator approval.
           </p>
 
           {!token ? (

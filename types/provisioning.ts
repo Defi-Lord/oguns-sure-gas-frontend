@@ -5,6 +5,7 @@ export type ManagedAccountRole =
 export type ManagedAccountStatus =
   | 'ACTIVE'
   | 'INACTIVE'
+  | 'PENDING_APPROVAL'
   | 'SUSPENDED';
 
 export interface ManagedAccountSummary {
@@ -21,6 +22,7 @@ export interface ManagedInvitationHandoff {
   account: ManagedAccountSummary;
   invitationToken: string;
   inviteExpiresAt: string;
+  emailStatus?: 'QUEUED' | 'DISABLED' | 'FAILED';
 }
 
 export interface ManagedInvitation

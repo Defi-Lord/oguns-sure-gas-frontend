@@ -7,6 +7,7 @@ export interface BranchManager {
   status:
     | 'ACTIVE'
     | 'INACTIVE'
+    | 'PENDING_APPROVAL'
     | 'SUSPENDED';
 }
 
