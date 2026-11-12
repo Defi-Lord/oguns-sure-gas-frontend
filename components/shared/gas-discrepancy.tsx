@@ -7,11 +7,10 @@ import { announceMoment } from '@/lib/experience/moment-policy';
 import { useAuthStore } from '@/stores/auth-store';
 import type { GasVerification } from '@/types/delivery';
 
-type Action = 'ACCEPT' | 'RETURN_COMPLETE' | 'RETURN_REFUND' | 'ESCALATE' | 'CONFIRM_RETURN' | 'REWEIGH';
+type Action = 'ACCEPT' | 'RETURN_COMPLETE' | 'ESCALATE' | 'CONFIRM_RETURN' | 'REWEIGH';
 const actionLabels: Record<Action, string> = {
   ACCEPT: 'Accept measured amount',
-  RETURN_COMPLETE: 'Return to complete my order',
-  RETURN_REFUND: 'Return and request a refund',
+  RETURN_COMPLETE: 'Return for refill correction',
   ESCALATE: 'Ask rider to return to branch',
   CONFIRM_RETURN: 'Confirm branch received the order',
   REWEIGH: 'Verify corrected weight and release for dispatch',
@@ -22,7 +21,7 @@ export function gasCaseLabel(state: string | null | undefined) {
     case 'AWAITING_CUSTOMER': return 'Awaiting customer decision';
     case 'ACCEPTED': return 'Measured amount accepted';
     case 'RETURN_FOR_CORRECTION': return 'Returning to branch for correction';
-    case 'RETURN_FOR_REFUND': return 'Returning to branch for refund review';
+    case 'RETURN_FOR_REFUND': return 'Returning to branch while decision is pending';
     case 'RETURN_FOR_DECISION': return 'Returning to branch while decision is pending';
     case 'AT_BRANCH_FOR_CORRECTION': return 'At branch for correction';
     case 'AT_BRANCH_FOR_DECISION': return 'At branch, awaiting customer decision';
@@ -32,8 +31,8 @@ export function gasCaseLabel(state: string | null | undefined) {
   }
 }
 
-type Props = { deliveryId: string; orderId: string; gas: GasVerification;
-  audience: 'customer' | 'management'; total?: string; refunded?: boolean; refresh: () => Promise<unknown> };
+type Props = { deliveryId: string; orderId: string; gas: Pick<GasVerification, 'discrepancyCase' | 'expectedGasKg' | 'gasSuppliedKg' | 'deliveryWeightKg'>;
+  audience: 'customer' | 'management' | 'staff'; total?: string; refunded?: boolean; refresh: () => Promise<unknown> };
 
 export function GasDiscrepancy({ deliveryId, orderId, gas, audience, total, refunded, refresh }: Props) {
   const item = gas.discrepancyCase;
@@ -50,9 +49,9 @@ export function GasDiscrepancy({ deliveryId, orderId, gas, audience, total, refu
   const awaiting = item.state === 'AWAITING_CUSTOMER' || item.state === 'AT_BRANCH_FOR_DECISION';
   const returning = ['RETURN_FOR_CORRECTION', 'RETURN_FOR_REFUND', 'RETURN_FOR_DECISION'].includes(item.state);
   const actions: Action[] = customer
-    ? awaiting ? [...(item.canAccept ? ['ACCEPT' as const] : []), 'RETURN_COMPLETE', 'RETURN_REFUND'] : []
+    ? awaiting ? [...(item.canAccept ? ['ACCEPT' as const] : []), 'RETURN_COMPLETE'] : []
     : returning ? ['CONFIRM_RETURN'] : item.state === 'AT_BRANCH_FOR_CORRECTION' ? ['REWEIGH']
-    : item.state === 'AWAITING_CUSTOMER' && item.expired ? ['ESCALATE'] : [];
+    : audience === 'management' && item.state === 'AWAITING_CUSTOMER' && item.expired ? ['ESCALATE'] : [];
   const review = intent?.version === item.version && actions.includes(intent.action) ? intent.action : null;
   const quantity = (kg: number | null) => kg == null ? 'Unavailable' : `${kg.toFixed(3)} kg`;
 
@@ -98,10 +97,8 @@ export function GasDiscrepancy({ deliveryId, orderId, gas, audience, total, refu
     {awaitingRedeliveryWeight && <p>The rider will weigh the cylinder again before completing delivery.</p>}
     {customer && awaiting && <p>{item.canAccept
       ? `Accepting the measured amount keeps the order total at ${total}. No price adjustment applies.`
-      : 'The measured amount cannot be accepted at the current price. Choose a return for correction or request a refund.'}</p>}
-    {returning && <p>{item.state === 'RETURN_FOR_REFUND'
-      ? 'Refund review starts after the branch confirms the cylinder was returned.'
-      : 'The branch must confirm it physically received the order before the rider is released.'}</p>}
+      : 'This measurement isn’t eligible for acceptance. Return the cylinder so branch staff can correct the refill.'}</p>}
+    {returning && <p>Branch staff confirm receipt after the rider hands back the cylinder.</p>}
     {!customer && item.state === 'AT_BRANCH_FOR_CORRECTION' && <p>Correct the refill first, then weigh the filled cylinder and enter its gross weight below. Assign an available rider after release.</p>}
     {item.state === 'REFUND_REVIEW' && <p>{refunded ? 'Your payment refund has been processed.' : customer ? 'The branch received the order. Finance will review your refund request.' : 'Receipt confirmed. A super admin can review the payment under Finance → Refund review.'}</p>}
     {!customer && item.state === 'AWAITING_CUSTOMER' && item.deadline && <p>Decision deadline: {new Date(item.deadline).toLocaleString('en-NG')}</p>}
@@ -116,7 +113,7 @@ export function GasDiscrepancy({ deliveryId, orderId, gas, audience, total, refu
       onClick={() => setIntent({ action, version: item.version })}>{actionLabels[action]}</button>)}</div>}
     {review && <div className="space-y-2">
       <p>{actionLabels[review]}? {review === 'CONFIRM_RETURN' ? 'Confirm only after the physical handoff.'
-        : review === 'RETURN_REFUND' ? 'Refund review begins after the branch receives the order.' : ''}</p>
+        : review === 'RETURN_COMPLETE' ? 'Branch staff will correct the refill and send it back on the same order.' : ''}</p>
       <div className="flex flex-wrap gap-2">
         <button className={button} type="button" disabled={busy} onClick={() => setIntent(null)}>Go back</button>
         <button className={button} type="button" disabled={busy} onClick={() => void submit(review, item.version)}>
