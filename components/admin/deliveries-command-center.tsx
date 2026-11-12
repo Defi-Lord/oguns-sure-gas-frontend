@@ -9,7 +9,8 @@ import {
   Truck, UserRound, X,
 } from 'lucide-react';
 import { api, getApiErrorMessage } from '@/lib/api/client';
-import { GasDiscrepancy, gasCaseLabel } from '@/components/shared/gas-discrepancy';
+import { GasDiscrepancy } from '@/components/shared/gas-discrepancy';
+import { GasReturnQueue, gasReturnQueueLabel, useAdminDeliveries } from './gas-return-queue';
 import { useAuthStore } from '@/stores/auth-store';
 import type { DeliveriesResponse, Delivery, DeliveryStatus } from '@/types/delivery';
 
@@ -125,6 +126,8 @@ function DeliveryDrawer({
           </header>
 
           <div className="flex-1 space-y-4 overflow-y-auto p-4 sm:p-5">
+              {delivery.gasVerification && <GasDiscrepancy key={delivery.id} deliveryId={delivery.id}
+                orderId={delivery.orderId} gas={delivery.gasVerification} audience="management" refresh={onRefresh} />}
             <section className="rounded-[24px] border border-slate-200/80 bg-white p-5 dark:border-white/[0.07] dark:bg-[#0b211b]">
               <h3 className="flex items-center gap-2 text-sm font-bold text-slate-950 dark:text-white"><CircleDot className="size-4 text-emerald-600" /> Delivery lifecycle</h3>
               {delivery.status === 'FAILED' || delivery.status === 'CANCELLED' ? (
@@ -211,8 +214,6 @@ function DeliveryDrawer({
 
             <section className="rounded-[24px] border border-slate-200/80 bg-white p-5 dark:border-white/[0.07] dark:bg-[#0b211b]">
               <h3 className="flex items-center gap-2 text-sm font-bold text-slate-950 dark:text-white"><ShieldCheck className="size-4 text-emerald-600" /> Gas verification</h3>
-              {delivery.gasVerification && <GasDiscrepancy key={delivery.id} deliveryId={delivery.id}
-                orderId={delivery.orderId} gas={delivery.gasVerification} audience="management" refresh={onRefresh} />}
               {delivery.gasVerification ? (
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
                   <Detail label="Verification status" value={delivery.gasVerification.verificationStatus} />
@@ -268,27 +269,12 @@ export function DeliveriesCommandCenter() {
   const [selectedRiderId, setSelectedRiderId] = useState('');
   const [assignmentError, setAssignmentError] = useState('');
 
-  const deliveriesQuery = useQuery({
-    queryKey: ['admin-deliveries'],
-    queryFn: async () => {
-      const response = await api.get<DeliveriesResponse>('/deliveries');
-      return response.data.data.deliveries ?? [];
-    },
-    staleTime: 20_000,
-    refetchInterval: 15_000,
-    refetchOnWindowFocus: false,
-  });
+  const { query: deliveriesQuery, queryKey: deliveriesKey } = useAdminDeliveries();
   const deliveries = useMemo(
     () => deliveriesQuery.data ?? [],
     [deliveriesQuery.data],
   );
   const selectedDelivery = deliveries.find((d) => d.id === selectedDeliveryId) ?? null;
-  const returnCases = deliveries.filter(({ gasVerification, status }) => {
-    const state = gasVerification?.discrepancyCase?.state;
-    return state?.startsWith('RETURN_FOR_') || state === 'AT_BRANCH_FOR_CORRECTION' ||
-      state === 'REFUND_REVIEW' || (state === 'CORRECTED' && status === 'PENDING');
-  });
-
   const branches = useMemo(() => {
     const map = new Map<string, string>();
     deliveries.forEach((d) => map.set(d.branch.id, d.branch.name));
@@ -336,9 +322,9 @@ export function DeliveriesCommandCenter() {
       return refreshed.data.data.deliveries ?? [];
     },
     onSuccess: (updated) => {
-      queryClient.setQueryData<Delivery[]>(['admin-deliveries'], updated);
+      queryClient.setQueryData<Delivery[]>(deliveriesKey, updated);
       setAssignmentDelivery(null); setSelectedRiderId(''); setAssignmentError('');
-      void queryClient.invalidateQueries({ queryKey: ['admin-deliveries'] });
+      void queryClient.invalidateQueries({ queryKey: deliveriesKey });
       void queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
     },
     onError: (error) => setAssignmentError(getApiErrorMessage(error)),
@@ -383,19 +369,8 @@ export function DeliveriesCommandCenter() {
           </div>
         </div>
 
-        {returnCases.length > 0 && <section aria-labelledby="gas-returns-title" className="space-y-3 rounded-[22px] border border-amber-200 p-4 dark:border-amber-500/30">
-          <h2 id="gas-returns-title" className="font-semibold">Gas returns and corrections</h2>
-          <ul className="grid gap-2 sm:grid-cols-2">
-            {returnCases.map((delivery) => {
-              const state = delivery.gasVerification?.discrepancyCase?.state;
-              return <li key={delivery.id}><button type="button" onClick={() => setSelectedDeliveryId(delivery.id)}
-                className="w-full rounded-xl border border-slate-200 p-3 text-left text-sm dark:border-white/10">
-                <strong>{delivery.order.orderNumber}</strong>
-                <span className="block">{state === 'CORRECTED' ? 'Corrected · assign rider for redelivery' : state === 'REFUND_REVIEW' ? 'Returned · sent to Finance for refund review' : gasCaseLabel(state)}</span>
-              </button></li>;
-            })}
-          </ul>
-        </section>}
+        <GasReturnQueue deliveries={deliveries} pending={deliveriesQuery.isPending}
+          error={deliveriesQuery.error} onOpen={setSelectedDeliveryId} />
 
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {[
@@ -454,7 +429,7 @@ export function DeliveriesCommandCenter() {
                         <td className="px-5 py-4"><p className="text-xs font-medium text-slate-700 dark:text-slate-300">{d.branch.name}</p><p className="mt-1 text-[10px] text-slate-400">{d.branch.code}</p></td>
                         <td className="px-5 py-4"><p className="text-xs font-medium text-slate-700 dark:text-slate-300">{riderName(d)}</p><p className="mt-1 text-[10px] text-slate-400">{d.rider?.vehicleNumber ?? ''}</p></td>
                         <td className="px-5 py-4"><StatusBadge status={d.status} /></td>
-                        <td className="px-5 py-4 text-[11px] text-slate-500">{d.gasVerification ? <span className="flex items-center gap-2"><ShieldCheck className="size-4 text-emerald-600" />{d.gasVerification.discrepancyCase?.state === 'AWAITING_CUSTOMER' && d.gasVerification.discrepancyCase.expired ? 'Decision overdue' : d.gasVerification.verificationStatus}</span> : 'Not required'}</td>
+                        <td className="px-5 py-4 text-[11px] text-slate-500">{d.gasVerification ? <span className="flex items-center gap-2"><ShieldCheck className="size-4 text-emerald-600" />{d.gasVerification.discrepancyCase?.state === 'AWAITING_CUSTOMER' && d.gasVerification.discrepancyCase.expired ? 'Decision overdue' : gasReturnQueueLabel(d) ?? d.gasVerification.verificationStatus}</span> : 'Not required'}</td>
                         <td className="px-5 py-4 text-[11px] text-slate-500">{formatDate(d.createdAt)}</td>
                         <td className="px-5 py-4"><ChevronRight className="size-4 text-slate-300" /></td>
                       </tr>
