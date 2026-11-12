@@ -9,7 +9,7 @@ import {
   Truck, UserRound, X,
 } from 'lucide-react';
 import { api, getApiErrorMessage } from '@/lib/api/client';
-import { GasDiscrepancy } from '@/components/shared/gas-discrepancy';
+import { GasDiscrepancy, gasCaseLabel } from '@/components/shared/gas-discrepancy';
 import { useAuthStore } from '@/stores/auth-store';
 import type { DeliveriesResponse, Delivery, DeliveryStatus } from '@/types/delivery';
 
@@ -283,6 +283,11 @@ export function DeliveriesCommandCenter() {
     [deliveriesQuery.data],
   );
   const selectedDelivery = deliveries.find((d) => d.id === selectedDeliveryId) ?? null;
+  const returnCases = deliveries.filter(({ gasVerification, status }) => {
+    const state = gasVerification?.discrepancyCase?.state;
+    return state?.startsWith('RETURN_FOR_') || state === 'AT_BRANCH_FOR_CORRECTION' ||
+      state === 'REFUND_REVIEW' || (state === 'CORRECTED' && status === 'PENDING');
+  });
 
   const branches = useMemo(() => {
     const map = new Map<string, string>();
@@ -377,6 +382,20 @@ export function DeliveriesCommandCenter() {
             </button>
           </div>
         </div>
+
+        {returnCases.length > 0 && <section aria-labelledby="gas-returns-title" className="space-y-3 rounded-[22px] border border-amber-200 p-4 dark:border-amber-500/30">
+          <h2 id="gas-returns-title" className="font-semibold">Gas returns and corrections</h2>
+          <ul className="grid gap-2 sm:grid-cols-2">
+            {returnCases.map((delivery) => {
+              const state = delivery.gasVerification?.discrepancyCase?.state;
+              return <li key={delivery.id}><button type="button" onClick={() => setSelectedDeliveryId(delivery.id)}
+                className="w-full rounded-xl border border-slate-200 p-3 text-left text-sm dark:border-white/10">
+                <strong>{delivery.order.orderNumber}</strong>
+                <span className="block">{state === 'CORRECTED' ? 'Corrected · assign rider for redelivery' : state === 'REFUND_REVIEW' ? 'Returned · sent to Finance for refund review' : gasCaseLabel(state)}</span>
+              </button></li>;
+            })}
+          </ul>
+        </section>}
 
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {[
