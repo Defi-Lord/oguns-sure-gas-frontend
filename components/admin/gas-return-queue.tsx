@@ -28,7 +28,7 @@ export function gasReturnQueueLabel(delivery: Delivery): string | null {
   const state = delivery.gasVerification?.discrepancyCase?.state;
   switch (state) {
     case 'RETURN_FOR_CORRECTION': return 'Awaiting branch receipt · correction';
-    case 'RETURN_FOR_REFUND': return 'Awaiting branch receipt · refund';
+    case 'RETURN_FOR_REFUND': return 'Awaiting branch receipt · customer decision';
     case 'RETURN_FOR_DECISION': return 'Awaiting branch receipt · customer decision';
     case 'AT_BRANCH_FOR_CORRECTION':
     case 'AT_BRANCH_FOR_DECISION': return gasCaseLabel(state);
