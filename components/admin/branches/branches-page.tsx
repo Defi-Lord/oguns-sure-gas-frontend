@@ -49,6 +49,7 @@ import {
 } from '@/lib/api/client';
 
 import {
+  approveManagedAccount,
   resendManagedInvitation,
 } from '@/lib/api/provisioning';
 
@@ -293,8 +294,8 @@ function BranchCard({
               >
                 {branch.manager.status ===
                 'INACTIVE'
-                  ? 'Pending activation'
-                  : branch.manager.status}
+                  ? 'Awaiting acceptance'
+                  : branch.manager.status === 'PENDING_APPROVAL' ? 'Pending approval' : branch.manager.status}
               </p>
             ) : null}
           </div>
@@ -1151,6 +1152,21 @@ function BranchWorkspace({
       },
     });
 
+  const approveManagerMutation = useMutation({
+    mutationFn: approveManagedAccount,
+    onSuccess: async (account) => {
+      setErrorMessage(null);
+      setSuccessMessage('Branch Manager approved and activated.');
+      if (branch.manager?.id === account.id) {
+        await syncQueries({ ...branch, manager: { ...branch.manager, status: account.status } });
+      }
+    },
+    onError: (error) => {
+      setSuccessMessage(null);
+      setErrorMessage(getApiErrorMessage(error));
+    },
+  });
+
   const resendManagerMutation =
     useMutation({
       mutationFn:
@@ -1887,8 +1903,8 @@ function BranchWorkspace({
                       >
                         {branch.manager.status ===
                         'INACTIVE'
-                          ? 'Pending activation'
-                          : branch.manager.status}
+                          ? 'Awaiting acceptance'
+                          : branch.manager.status === 'PENDING_APPROVAL' ? 'Pending approval' : branch.manager.status}
                       </span>
                     ) : null}
                   </div>
@@ -1926,6 +1942,19 @@ function BranchWorkspace({
                         ? 'Replace manager'
                         : 'Invite manager'}
                     </Button>
+
+                    {branch.manager?.status === 'PENDING_APPROVAL' ? (
+                      <Button
+                        type="button"
+                        disabled={isBusy || !branch.isActive || approveManagerMutation.isPending}
+                        onClick={() => {
+                          if (branch.manager) approveManagerMutation.mutate(branch.manager.id);
+                        }}
+                        className="h-9 rounded-xl bg-emerald-700"
+                      >
+                        {approveManagerMutation.isPending ? 'Approving…' : 'Approve manager account'}
+                      </Button>
+                    ) : null}
 
                     {branch.manager?.status ===
                     'INACTIVE' ? (
@@ -2626,7 +2655,7 @@ export function BranchesPage() {
               selectedBranch.id
             }
             branch={
-              selectedBranch
+              branches.find((branch) => branch.id === selectedBranch.id) ?? selectedBranch
             }
             onClose={() =>
               setSelectedBranch(

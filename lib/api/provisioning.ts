@@ -6,6 +6,7 @@ import type {
   AcceptManagedInvitationInput,
   AcceptManagedInvitationResponse,
   AcceptManagedInvitationResult,
+  ManagedAccountSummary,
   ManagedInvitation,
   ManagedInvitationResponse,
   ProvisionBranchManagerInput,
@@ -68,3 +69,11 @@ export const acceptManagedInvitation =
 
     return response.data.data;
   };
+
+export async function approveManagedAccount(userId: string): Promise<ManagedAccountSummary> {
+  const response = await api.post<{ data: ManagedAccountSummary }>(
+    `/provisioning/users/${userId}/approve`,
+    {},
+  );
+  return response.data.data;
+}

@@ -456,7 +456,7 @@ export function InviteBranchManagerDialog({
                 <span className="mt-1 block text-xs leading-5 text-slate-500">
                   The new account will become this
                   branch&apos;s manager immediately
-                  in a pending activation state.
+                  but cannot sign in until a Super Admin approves the account.
                   The previous manager may be
                   deactivated if they manage no
                   other branch.

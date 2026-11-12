@@ -40,6 +40,7 @@ import {
 } from '@/stores/auth-store';
 
 import {
+  approveManagedAccount,
   resendManagedInvitation,
 } from '@/lib/api/provisioning';
 
@@ -151,6 +152,7 @@ function statusClasses(status: string) {
     case 'IN_TRANSIT':
       return 'border-blue-200 bg-blue-50 text-blue-700';
 
+    case 'PENDING_APPROVAL':
     case 'PENDING':
       return 'border-amber-200 bg-amber-50 text-amber-700';
 
@@ -352,6 +354,9 @@ export function RidersCommandCenter() {
     },
   });
 
+  const selectedAccountStatus = ridersQuery.data?.find((rider) => rider.id === selectedRider?.id)?.user.status
+    ?? selectedRider?.user.status;
+
   const branchesQuery = useQuery({
     queryKey: ['admin-rider-branches'],
 
@@ -439,6 +444,18 @@ export function RidersCommandCenter() {
         getApiErrorMessage(error),
       );
     },
+  });
+
+  const approveRiderMutation = useMutation({
+    mutationFn: approveManagedAccount,
+    onSuccess: async (account) => {
+      setSelectedRider((current) => current?.user.id === account.id
+        ? { ...current, user: { ...current.user, status: account.status } }
+        : current);
+      setProfileMessage('Rider approved and activated.');
+      await queryClient.invalidateQueries({ queryKey: ['admin-riders'] });
+    },
+    onError: (error) => setProfileMessage(getApiErrorMessage(error)),
   });
 
   const resendInviteMutation =
@@ -1763,15 +1780,25 @@ export function RidersCommandCenter() {
                       <ShieldCheck className="h-4 w-4 text-slate-400" />
                       <StatusBadge
                         status={
-                          selectedRider
-                            .user.status
+                          selectedAccountStatus ?? selectedRider.user.status
                         }
                       />
                     </div>
                   </div>
 
-                  {selectedRider.user.status ===
-                  'INACTIVE' ? (
+                  {selectedAccountStatus === 'PENDING_APPROVAL' &&
+                  user?.role === 'SUPER_ADMIN' ? (
+                    <button
+                      type="button"
+                      disabled={approveRiderMutation.isPending}
+                      onClick={() => approveRiderMutation.mutate(selectedRider.user.id)}
+                      className="mt-4 rounded-xl bg-emerald-700 px-3.5 py-2 text-xs font-bold text-white disabled:opacity-60"
+                    >
+                      {approveRiderMutation.isPending ? 'Approving…' : 'Approve rider account'}
+                    </button>
+                  ) : null}
+
+                  {selectedAccountStatus === 'INACTIVE' ? (
                     <button
                       type="button"
                       onClick={() =>
@@ -1789,7 +1816,7 @@ export function RidersCommandCenter() {
                       ) : (
                         <RefreshCw className="h-4 w-4" />
                       )}
-                      Resend activation invite
+                      Resend invitation
                     </button>
                   ) : null}
                 </div>

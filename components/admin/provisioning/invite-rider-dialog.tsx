@@ -506,8 +506,8 @@ export function InviteRiderDialog({
             <div className="rounded-[20px] border border-blue-100 bg-blue-50/70 p-4 text-xs leading-5 text-blue-700">
               Rider availability starts OFF.
               Delivery assignment remains blocked
-              until the rider activates their
-              account and is later marked
+              until a Super Admin approves the
+              account and the rider is marked
               available.
             </div>
           )}

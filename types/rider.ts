@@ -1,6 +1,7 @@
 ﻿export type RiderAccountStatus =
   | 'ACTIVE'
   | 'INACTIVE'
+  | 'PENDING_APPROVAL'
   | 'SUSPENDED'
   | string;
 

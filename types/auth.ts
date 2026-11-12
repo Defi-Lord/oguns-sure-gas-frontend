@@ -8,6 +8,7 @@ export type UserRole =
 export type UserStatus =
   | 'ACTIVE'
   | 'INACTIVE'
+  | 'PENDING_APPROVAL'
   | 'SUSPENDED';
 
 export interface AuthManagedBranch {
