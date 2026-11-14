@@ -38,6 +38,8 @@ import {
   X,
 } from 'lucide-react';
 
+import { BranchCheckoutSettlement } from './branch-checkout-settlement';
+
 import {
   createBranch,
   getManagementBranches,
@@ -2041,6 +2043,8 @@ function BranchWorkspace({
                   </div>
                 </div>
               </section>
+
+              <BranchCheckoutSettlement key={branch.id} branchId={branch.id} />
 
               <section className="rounded-[24px] border border-slate-200/80 bg-white p-5">
                 <div className="flex items-center gap-3">
