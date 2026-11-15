@@ -9,6 +9,7 @@ import type {
 } from '@/types/notification';
 
 interface NotificationServerToClientEvents {
+  'workspace:changed': (change: { domain: string }) => void;
   'notification:ready': (
     payload: NotificationRealtimeReady,
   ) => void;
@@ -49,6 +50,7 @@ export const createNotificationSocket = (
       auth: {
         token: accessToken,
       },
+      autoConnect: false,
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1_000,

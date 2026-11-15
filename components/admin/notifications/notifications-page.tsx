@@ -4,7 +4,6 @@ import { ProductNotificationLink } from '@/components/products/product-notificat
 import { SupportNotificationLink } from '@/components/support/support-notification-link';
 
 import {
-  useSyncExternalStore,
   useMemo,
   useState,
 } from 'react';
@@ -59,9 +58,7 @@ import {
   getApiErrorMessage,
 } from '@/lib/api/client';
 
-import {
-  createNotificationSocket,
-} from '@/lib/realtime/notifications';
+import { useWorkspaceConnection } from '@/components/providers/workspace-realtime';
 
 import {
   useAuthStore,
@@ -97,56 +94,6 @@ const TYPE_LABEL: Record<
   SYSTEM: 'System',
   PROMOTION: 'Promotion',
 };
-
-// Mutable connection state belongs to this external store, outside React render.
-function createNotificationConnectionStore(
-  accessToken: string | null | undefined,
-  onNotification: (notification: NotificationRecord) => void,
-) {
-  let connected = false;
-
-  return {
-    getSnapshot: () => connected,
-    getServerSnapshot: () => false,
-    subscribe: (onStoreChange: () => void) => {
-      connected = false;
-      if (!accessToken) {
-        return () => {};
-      }
-
-      let active = true;
-      let socket: ReturnType<typeof createNotificationSocket> | null = null;
-
-      const updateConnection = (next: boolean) => {
-        if (!active || connected === next) return;
-        connected = next;
-        onStoreChange();
-      };
-
-      try {
-        socket = createNotificationSocket(accessToken);
-        socket.on('notification:ready', () => updateConnection(true));
-        socket.on('connect_error', () => updateConnection(false));
-        socket.on('disconnect', () => updateConnection(false));
-        socket.on('notification:new', (notification) => {
-          if (!active) return;
-          onNotification(notification);
-        });
-      } catch {
-        // Polling remains enabled when socket setup is unavailable.
-        active = false;
-        connected = false;
-        socket?.disconnect();
-      }
-
-      return () => {
-        active = false;
-        connected = false;
-        socket?.disconnect();
-      };
-    },
-  };
-}
 
 const TYPE_CLASS: Record<
   NotificationType,
@@ -393,12 +340,6 @@ export function NotificationsPage() {
   const queryClient =
     useQueryClient();
 
-  const accessToken =
-    useAuthStore(
-      (state) =>
-        state.accessToken,
-    );
-
   const authUser =
     useAuthStore(
       (state) =>
@@ -457,21 +398,7 @@ export function NotificationsPage() {
       string | null
     >(null);
 
-  const realtimeStore = useMemo(
-    () => createNotificationConnectionStore(accessToken, (notification) => {
-      setNotice(
-        `New ${TYPE_LABEL[notification.type].toLowerCase()} notification received.`,
-      );
-      void queryClient.invalidateQueries({ queryKey: QUERY_ROOT });
-    }),
-    [accessToken, queryClient],
-  );
-
-  const realtimeConnected = useSyncExternalStore(
-    realtimeStore.subscribe,
-    realtimeStore.getSnapshot,
-    realtimeStore.getServerSnapshot,
-  );
+  const realtimeConnected = useWorkspaceConnection();
 
   const serverFilters =
     useMemo<
@@ -532,10 +459,6 @@ export function NotificationsPage() {
       queryFn:
         getUnreadNotificationCount,
 
-      refetchInterval:
-        realtimeConnected
-          ? false
-          : 30_000,
     });
 
   const notifications = useMemo(
