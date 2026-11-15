@@ -51,3 +51,23 @@ export function notificationAffectsQuery(
   }
   return false;
 }
+
+const workspaceDomains = {
+  branches: [people, products, /^(public-branches|branch-preference|delivery-areas)$/],
+  catalogue: [products],
+  inventory: [products, /^(branch-manager-dashboard|analytics|reports)$/],
+  'delivery-zones': [/^(delivery-areas|delivery-zones|checkout|settings)$/],
+  accounts: [people],
+  orders: [orders, money],
+  deliveries: [orders, money],
+  finance: [money, tips],
+  campaigns: [campaigns],
+  support: [support],
+  settings: [/^(settings|platform-fee|checkout|delivery-areas)$/],
+  notifications: [inbox],
+} satisfies Record<string, RegExp[]>;
+
+export function workspaceChangeAffectsQuery(domain: string, key: readonly unknown[]): boolean {
+  if (!canCatchUpQuery(key) || !Object.hasOwn(workspaceDomains, domain)) return false;
+  return workspaceDomains[domain as keyof typeof workspaceDomains].some((group) => matches(key, group));
+}

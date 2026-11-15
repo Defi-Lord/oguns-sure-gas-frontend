@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { createNotificationSocket } from '@/lib/realtime/notifications';
-import { canCatchUpQuery, notificationAffectsQuery } from '@/lib/realtime/workspace-updates';
+import { canCatchUpQuery, notificationAffectsQuery, workspaceChangeAffectsQuery } from '@/lib/realtime/workspace-updates';
 import { useAuthStore } from '@/stores/auth-store';
 import type { NotificationRecord } from '@/types/notification';
 
@@ -26,6 +26,7 @@ export function WorkspaceRealtime({ children }: { children: ReactNode }) {
     let socket: ReturnType<typeof createNotificationSocket> | undefined;
     let timer: number | undefined;
     const pending: NotificationRecord[] = [];
+    const domains = new Set<string>();
     const seen = new Set<string>();
     const current = () => {
       const auth = useAuthStore.getState();
@@ -43,6 +44,23 @@ export function WorkspaceRealtime({ children }: { children: ReactNode }) {
       }, { cancelRefetch: false });
     };
     const resume = () => catchUp(2_000);
+
+    const scheduleRefresh = () => {
+      if (timer !== undefined) return;
+      timer = window.setTimeout(() => {
+        timer = undefined;
+        if (!current()) return;
+        const changedDomains = [...domains];
+        domains.clear();
+        const updates = pending.splice(0);
+        void client.invalidateQueries({
+          refetchType: document.visibilityState === 'hidden' ? 'none' : 'active',
+          predicate: (query) =>
+            changedDomains.some((domain) => workspaceChangeAffectsQuery(domain, query.queryKey))
+            || updates.some((update) => notificationAffectsQuery(update, query.queryKey)),
+        });
+      }, 120);
+    };
 
     try {
       socket = createNotificationSocket(token);
@@ -64,17 +82,12 @@ export function WorkspaceRealtime({ children }: { children: ReactNode }) {
           if (!oldest.done) seen.delete(oldest.value);
         }
         pending.push(notification);
-        if (timer !== undefined) return;
-        timer = window.setTimeout(() => {
-          timer = undefined;
-          if (!current()) return;
-          const updates = pending.splice(0);
-          void client.invalidateQueries({
-            refetchType: document.visibilityState === 'hidden' ? 'none' : 'active',
-            predicate: (query) =>
-              updates.some((update) => notificationAffectsQuery(update, query.queryKey)),
-          });
-        }, 120);
+        scheduleRefresh();
+      });
+      socket.on('workspace:changed', ({ domain }) => {
+        if (!current()) return;
+        domains.add(domain);
+        scheduleRefresh();
       });
       socket.connect();
     } catch {

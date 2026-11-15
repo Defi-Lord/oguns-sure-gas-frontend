@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { QueryClient, QueryObserver } from '@tanstack/react-query';
-import { canCatchUpQuery, notificationAffectsQuery } from '../lib/realtime/workspace-updates.ts';
+import { canCatchUpQuery, notificationAffectsQuery, workspaceChangeAffectsQuery } from '../lib/realtime/workspace-updates.ts';
 
 for (const scenario of [
   {
@@ -53,4 +53,18 @@ test('order updates reach customer, staff and admin namespace keys without inspe
   assert.equal(notificationAffectsQuery(update, ['customer', 'addresses', 'orders']), false);
   assert.equal(canCatchUpQuery(['support-draft', 'account']), false);
   assert.equal(canCatchUpQuery(['customer', 'tracking', 'account']), false);
+});
+
+test('management mutations refresh catalogue, delivery zones, finance and staff screens independently', () => {
+  for (const [domain, key] of [
+    ['catalogue', ['customer', 'public-products', 'branch']],
+    ['inventory', ['admin-inventory']],
+    ['delivery-zones', ['customer', 'delivery-areas', 'account', 'branch']],
+    ['finance', ['finance-refunds']],
+    ['accounts', ['admin-staff']],
+    ['campaigns', ['customer', 'vouchers']],
+    ['support', ['order-support', 'account', 'case', 'id']],
+  ]) assert.equal(workspaceChangeAffectsQuery(domain, key), true);
+  assert.equal(workspaceChangeAffectsQuery('catalogue', ['rider', 'wallet', 'rider-1']), false);
+  assert.equal(workspaceChangeAffectsQuery('constructor', ['admin', 'orders']), false);
 });

@@ -9,6 +9,7 @@ import type {
 } from '@/types/notification';
 
 interface NotificationServerToClientEvents {
+  'workspace:changed': (change: { domain: string }) => void;
   'notification:ready': (
     payload: NotificationRealtimeReady,
   ) => void;
