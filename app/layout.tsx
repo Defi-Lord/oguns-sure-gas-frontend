@@ -9,6 +9,7 @@ import { CustomerEntrance } from '@/components/customer/customer-welcome';
 import '@/components/shared/mobile-usability.css';
 import { NativeRuntime } from '@/components/native/native-runtime';
 import { DeveloperCredit } from '@/components/shared/developer-credit';
+import { WebAppWorker } from '@/components/shared/web-app-worker';
 
 import {
   AppProviders,
@@ -40,6 +41,7 @@ export default function RootLayout({
       <body>
         <AppProviders>
           <NativeRuntime/>
+          <WebAppWorker />
           <CustomerEntrance/>
           {children}
           <DeveloperCredit />

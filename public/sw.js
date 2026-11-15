@@ -43,8 +43,14 @@ self.addEventListener('notificationclick',event=>{
   const data=event.notification.data;
   if(!data||!PUSH_PATHS.has(data.url)||await pushState('get')!==data.binding)return;
   const target=new URL(data.url,self.location.origin);
+  const portal=target.pathname.split('/')[1];
   const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
-  for(const client of windows){if(new URL(client.url).origin===target.origin){await client.navigate(target.href);await client.focus();return;}}
+  for(const client of windows){
+   const current=new URL(client.url);
+   if(current.origin!==target.origin||current.pathname.split('/')[1]!==portal)continue;
+   const destination=current.href===target.href?client:await client.navigate(target.href);
+   if(destination){await destination.focus();return;}
+  }
   await self.clients.openWindow(target.href);
  })());
 });

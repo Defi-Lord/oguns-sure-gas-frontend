@@ -10,7 +10,6 @@ import { useAuthStore } from '@/stores/auth-store';
 import s from './customer.module.css';
 import h from './customer-header.module.css';
 import m from './customer-app.module.css';
-import { CustomerPwa } from './customer-pwa';
 import { CustomerRewardNotice } from './customer-reward-notice';
 import { useShoppingBranch } from './customer-branch';
 import { useCustomerCart } from '@/stores/customer-cart-store';
@@ -54,7 +53,6 @@ export function CustomerShell({ children }: { children: React.ReactNode }) {
  ];
  if (['/shop/login','/shop/register','/shop/forgot-password','/shop/reset-password','/shop/verify-email','/shop/account-email'].includes(pathname)) return <div className={s.surface}><main id="customer-content">{children}</main></div>;
  return <div className={`${s.surface} ${m.app}`} data-customer-effects="on" data-customer-design="navigation-v3">
-  <CustomerPwa/>
   <a className={s.skip} href="#customer-content">Skip to content</a>
   <header className={`${s.topbar} ${h.header}`}>
    <div className={h.identity}><Link href="/shop" className={h.brand} aria-label="MySureGas shop"><span className={h.flame}><Flame size={28} strokeWidth={1.8}/><i/></span>MySureGas</Link><button className={h.menu} aria-label="Open customer menu" aria-haspopup="dialog" aria-expanded={menuOpen} aria-controls="customer-drawer" onClick={open}><Menu size={19}/></button></div>
