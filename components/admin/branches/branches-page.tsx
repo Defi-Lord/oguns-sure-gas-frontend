@@ -2297,6 +2297,7 @@ function BranchWorkspace({
       />
 
       <InvitationHandoffDialog
+        aboveDrawer
         open={
           Boolean(
             managerInvitation,

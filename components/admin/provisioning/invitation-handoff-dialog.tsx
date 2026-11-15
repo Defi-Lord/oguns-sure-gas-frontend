@@ -69,8 +69,10 @@ export function InvitationHandoffDialog({
   open,
   onOpenChange,
   invitation,
+  aboveDrawer = false,
 }: {
   open: boolean;
+  aboveDrawer?: boolean;
   onOpenChange: (
     open: boolean,
   ) => void;
@@ -136,7 +138,7 @@ export function InvitationHandoffDialog({
         handleOpenChange
       }
     >
-      <DialogContent className="max-h-[92vh] overflow-y-auto rounded-[28px] border-slate-200 p-0 sm:max-w-2xl">
+      <DialogContent layer={aboveDrawer ? 'above-drawer' : 'default'} className="max-h-[92vh] overflow-y-auto rounded-[28px] border-slate-200 p-0 sm:max-w-2xl">
         <DialogHeader className="border-b border-slate-100 px-6 pb-5 pt-6 sm:px-8">
           <div className="flex size-12 items-center justify-center rounded-[17px] bg-emerald-50 text-emerald-700">
             <ShieldCheck className="size-5" />
