@@ -49,6 +49,7 @@ export const createNotificationSocket = (
       auth: {
         token: accessToken,
       },
+      autoConnect: false,
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1_000,

@@ -7,6 +7,7 @@ import {
 import { useEffect, useState } from 'react';
 import { PushSessionRuntime } from '@/components/notifications/push-alerts';
 import { ExperienceMoments } from '@/components/experience/experience-moments';
+import { WorkspaceRealtime } from './workspace-realtime';
 import { useAuthStore } from '@/stores/auth-store';
 
 interface AppProvidersProps {
@@ -36,9 +37,11 @@ function SessionQueryProvider({
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ExperienceMoments />
-      <PushSessionRuntime />
-      {children}
+      <WorkspaceRealtime>
+        <ExperienceMoments />
+        <PushSessionRuntime />
+        {children}
+      </WorkspaceRealtime>
     </QueryClientProvider>
   );
 }
