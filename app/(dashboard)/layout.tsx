@@ -5,6 +5,9 @@
 import {
   AdminShell,
 } from '@/components/admin/admin-shell';
+import { portalAppMetadata } from '@/lib/pwa/portal-metadata';
+
+export const metadata = portalAppMetadata('admin');
 
 interface DashboardLayoutProps {
   children: ReactNode;

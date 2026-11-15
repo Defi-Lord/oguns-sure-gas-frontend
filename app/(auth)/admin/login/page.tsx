@@ -6,6 +6,7 @@ import {
 import {
   LoginForm,
 } from '@/components/auth/login-form';
+import { portalAppMetadata } from '@/lib/pwa/portal-metadata';
 
 import {
   Badge,
@@ -18,6 +19,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+
+export const metadata = portalAppMetadata('admin');
 
 export default function AdminLoginPage() {
   return (
