@@ -438,3 +438,8 @@ body {
     animation: none !important;
   }
 }
+
+html:has(dialog[data-page-finder][open]),
+html:has(dialog[data-page-finder][open]) body {
+  overflow: hidden !important;
+}
