@@ -292,7 +292,7 @@ export function InviteBranchManagerDialog({
         closeDialog
       }
     >
-      <DialogContent className="max-h-[92vh] overflow-y-auto rounded-[28px] border-slate-200 p-0 sm:max-w-2xl">
+      <DialogContent layer="above-drawer" className="max-h-[92vh] overflow-y-auto rounded-[28px] border-slate-200 p-0 sm:max-w-2xl">
         <DialogHeader className="border-b border-slate-100 px-6 pb-5 pt-6 sm:px-8">
           <div className="flex size-12 items-center justify-center rounded-[17px] bg-violet-50 text-violet-700">
             <UserRoundPlus className="size-5" />
