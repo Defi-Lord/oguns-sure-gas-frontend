@@ -5,15 +5,12 @@ import { ArrowRight, ArrowUpRight, Flame, MapPin, Package, ShieldCheck, Sparkles
 import { useAuthStore } from '@/stores/auth-store';
 import { CustomerBranchSettings, useShoppingBranch } from './customer-branch';
 import s from './customer-experience.module.css';
-export function CustomerEntrance() {
-  return <div className={s.entrance} aria-hidden="true"><div className={s.entranceMark}><Image src="/branding/ogun-sure-gas-mark.png" alt="" width={76} height={76} priority unoptimized/></div><strong>MySureGas<span>GOOD ENERGY STARTS HERE</span></strong><i/></div>;
-}
 const steps = [ { icon: MapPin, title: 'Your branch, remembered', detail: 'Choose once. Feel local every time.' }, { icon: Flame, title: 'Refill your everyday', detail: 'Gas, cylinders and essentials in one place.' }, { icon: Truck, title: 'Follow your order', detail: 'Stay close to every delivery update.' }, { icon: Gift, title: 'A little extra good', detail: 'Explore giveaways and your awarded rewards.' } ];
 export function CustomerWelcomeRibbon() {
   return <section className={s.ribbon} id="guide" aria-label="How MySureGas works"><span className={s.ribbonLabel}><Sparkles size={15}/> THE LITTLE THINGS</span><div className={s.ribbonWindow}><div className={s.ribbonTrack}>{[0,1].map(copy => <div className={s.ribbonGroup} key={copy} aria-hidden={copy === 1}>{steps.map(({ icon: Icon, title, detail }) => <div className={s.ribbonItem} key={title}><span><Icon size={18}/></span><div><strong>{title}</strong><small>{detail}</small></div><i>✳</i></div>)}</div>)}</div></div></section>;
 }
 function EnergyScene() {
-  return <div className={s.energyScene} aria-hidden="true"><div className={s.sceneOrbit}/><div className={s.sceneOrbitTwo}/><div className={s.sceneHalo}/><div className={s.sceneCore}><Image src="/branding/ogun-sure-gas-mark.png" alt="" width={122} height={122} loading="eager" unoptimized/><span>GOOD ENERGY</span></div><div className={s.floatTag}><MapPin size={17}/><span>Your neighbourhood.<strong>A little more connected.</strong></span></div><div className={s.floatTagTwo}><Package size={17}/><span>Everyday essentials<strong>One familiar place.</strong></span></div><span className={s.sceneSpark}>✳</span></div>;
+  return <div className={s.energyScene} aria-hidden="true"><div className={s.sceneOrbit}/><div className={s.sceneOrbitTwo}/><div className={s.sceneHalo}/><div className={s.sceneCore}><Image src="/branding/mysuregas-mark.webp" alt="" width={122} height={122} loading="eager" unoptimized/><span>GOOD ENERGY</span></div><div className={s.floatTag}><MapPin size={17}/><span>Your neighbourhood.<strong>A little more connected.</strong></span></div><div className={s.floatTagTwo}><Package size={17}/><span>Everyday essentials<strong>One familiar place.</strong></span></div><span className={s.sceneSpark}>✳</span></div>;
 }
 export function CustomerLanding() {
   const { user, hasHydrated } = useAuthStore();

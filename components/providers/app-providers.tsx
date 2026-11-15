@@ -6,9 +6,14 @@ import {
 } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { PushSessionRuntime } from '@/components/notifications/push-alerts';
-import { ExperienceMoments } from '@/components/experience/experience-moments';
+import dynamic from 'next/dynamic';
 import { WorkspaceRealtime } from './workspace-realtime';
 import { useAuthStore } from '@/stores/auth-store';
+
+const ExperienceMoments = dynamic(
+  () => import('@/components/experience/experience-moments').then((module) => module.ExperienceMoments),
+  { ssr: false },
+);
 
 interface AppProvidersProps {
   children: React.ReactNode;
@@ -17,6 +22,10 @@ interface AppProvidersProps {
 function SessionQueryProvider({
   children,
 }: AppProvidersProps) {
+  const showMoments = useAuthStore(({ hasHydrated, isAuthenticated, user }) =>
+    hasHydrated && isAuthenticated && user?.status === 'ACTIVE'
+    && ['CUSTOMER', 'STAFF', 'RIDER'].includes(user.role),
+  );
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -38,7 +47,7 @@ function SessionQueryProvider({
   return (
     <QueryClientProvider client={queryClient}>
       <WorkspaceRealtime>
-        <ExperienceMoments />
+        {showMoments && <ExperienceMoments />}
         <PushSessionRuntime />
         {children}
       </WorkspaceRealtime>
