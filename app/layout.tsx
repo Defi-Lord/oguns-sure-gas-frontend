@@ -7,6 +7,7 @@ import './globals.css';
 import '@/components/native/native.css';
 import '@/components/shared/mobile-usability.css';
 import { NativeRuntime } from '@/components/native/native-runtime';
+import { BrandedEntrance } from '@/components/shared/branded-entrance';
 import { DeveloperCredit } from '@/components/shared/developer-credit';
 import { WebAppWorker } from '@/components/shared/web-app-worker';
 
@@ -41,6 +42,7 @@ export default function RootLayout({
         <AppProviders>
           <NativeRuntime/>
           <WebAppWorker />
+          <BrandedEntrance />
           {children}
           <DeveloperCredit />
         </AppProviders>
