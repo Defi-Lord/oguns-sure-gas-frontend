@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowDownRight, Check, Flame, Loader2, Mail, Phone, RefreshCw, ShieldCheck, UserRound } from 'lucide-react';
+import { ArrowDownRight, Check, Mail, Phone, RefreshCw, ShieldCheck, UserRound } from 'lucide-react';
 import { api, getApiErrorMessage } from '@/lib/api/client';
 import { canAccessPortal } from '@/lib/portal-access';
 import { useAuthStore } from '@/stores/auth-store';
@@ -41,7 +41,7 @@ export function StaffWorkspace({ children }: { children: ReactNode }) {
   };
 
   if (!hasHydrated || !isAuthenticated || !user) {
-    return <StaffLoading />;
+    return <StaffWorkspacePlaceholder />;
   }
   if (user.role !== 'STAFF') {
     return <StaffAccessMessage title="Staff account required" detail="This workspace is for staff accounts. Use your account's portal to continue." action={<button onClick={logout} className="rounded-xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white">Return to staff sign-in</button>} />;
@@ -49,7 +49,7 @@ export function StaffWorkspace({ children }: { children: ReactNode }) {
   if (session.isError) {
     return <StaffAccessMessage title="Unable to verify your session" detail={getApiErrorMessage(session.error)} action={<><button onClick={() => void session.refetch()} className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white"><RefreshCw className="size-4" /> Retry</button><button onClick={logout} className="px-4 py-3 text-sm font-semibold">Sign out</button></>} />;
   }
-  if (session.isPending || !session.data) return <StaffLoading />;
+  if (session.isPending || !session.data) return <StaffWorkspacePlaceholder />;
   if (!canAccessPortal(session.data, 'staff') || session.data.id !== user.id) {
     return <StaffAccessMessage title="Staff access unavailable" detail="Your account cannot access this workspace. Contact your branch manager for assistance." action={<button onClick={logout} className="rounded-xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white">Return to sign-in</button>} />;
   }
@@ -61,8 +61,20 @@ export function StaffWorkspace({ children }: { children: ReactNode }) {
   );
 }
 
-function StaffLoading() {
-  return <main className={`${styles.surface} ${styles.center}`}><div className={styles.loading} role="status"><span className={styles.brandMark}><Flame size={30} aria-hidden="true" /></span><Loader2 className="mx-auto size-5 motion-safe:animate-spin" aria-hidden="true" /><p>Getting your workspace ready…</p></div></main>;
+function StaffWorkspacePlaceholder() {
+  return (
+    <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-8" aria-busy="true">
+      <span className="sr-only" role="status">Checking staff access</span>
+      <div aria-hidden="true" className="space-y-5">
+        <div className="h-6 w-40 rounded-md bg-emerald-100" />
+        <div className="h-28 rounded-2xl border border-emerald-100 bg-emerald-50" />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="h-24 rounded-2xl border border-emerald-100 bg-emerald-50/60" />
+          <div className="h-24 rounded-2xl border border-emerald-100 bg-emerald-50/60" />
+        </div>
+      </div>
+    </main>
+  );
 }
 
 function StaffAccessMessage({ title, detail, action }: { title: string; detail: string; action: ReactNode }) {
