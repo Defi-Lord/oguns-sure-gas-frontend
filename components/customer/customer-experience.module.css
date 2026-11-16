@@ -14,3 +14,16 @@
 .authStage>section:first-child>a{margin:22px 0 35px;width:fit-content}.authStage>section:first-child h1{font-size:clamp(39px,4.5vw,61px);letter-spacing:-2.8px;line-height:1.1;font-weight:550;margin:0 0 22px}.authStage>section:first-child h1 em{font-family:Georgia,serif;color:#6d8a4d;font-weight:400}.authStage>section:first-child>p{font-size:13px;line-height:1.9;color:#82906d}.authStage>section:last-child{border-color:#dfe8d3;box-shadow:0 12px 60px #7c995416;border-radius:26px}.authStage>section:last-child h2{letter-spacing:-1px;font-weight:550}
 @media(max-width:700px){.authStage{grid-template-columns:1fr;gap:22px;padding:24px 20px 40px;min-height:0}.authStage>section:first-child{min-height:0;padding:22px 24px;border-radius:24px}.authStage>section:first-child>a{margin:9px 0 24px}.authStage>section:first-child h1{font-size:39px;letter-spacing:-1.8px;margin-bottom:14px}.authStage>section:first-child>p{font-size:11px;margin:0}.authStage>section:last-child{padding:26px 23px}}
 @media(prefers-reduced-motion:reduce){.authStage>section:first-child:before{animation:none}}
+
+/* Animate the existing brand mark inside the hero, without covering the page. */
+@media (prefers-reduced-motion: no-preference) {
+  .sceneCore > img {
+    animation: brandArrival 420ms cubic-bezier(.2, .8, .25, 1) both;
+  }
+}
+
+@keyframes brandArrival {
+  from { transform: translateY(7px) scale(.92); }
+  60% { transform: translateY(-2px) scale(1.02); }
+  to { transform: translateY(0) scale(1); }
+}
