@@ -1,9 +1,32 @@
 .entrance{position:fixed;inset:0;background:#f7fbee;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;z-index:9999;pointer-events:none;animation:leave .85s ease forwards}
 .entranceMark{display:grid;place-items:center;width:92px;height:99px;border-radius:31px;color:#628a42;background:#e4f4cb;box-shadow:0 0 70px #c6e89c;animation:rise .5s ease both}
-.entrance strong{font-size:25px;color:#31563b;letter-spacing:-1px}
-.entrance strong span{display:block;margin-top:13px;font-size:8px;letter-spacing:3px;text-align:center;color:#9aad84}
-.entrance>i{width:110px;height:2px;background:#b2d57c;transform-origin:left;animation:load .6s ease both}
+.entrance strong,.inlineEntrance strong{font-size:25px;color:#31563b;letter-spacing:-1px}
+.entrance strong span,.inlineEntrance strong span{display:block;margin-top:13px;font-size:8px;letter-spacing:3px;text-align:center;color:#9aad84}
+.entrance>i,.inlineEntrance>i{width:110px;height:2px;background:#b2d57c;transform-origin:left;animation:load .6s ease both}
 @keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 @keyframes load{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 @keyframes leave{0%,65%{opacity:1;visibility:visible}100%{opacity:0;visibility:hidden}}
 @media (prefers-reduced-motion: reduce) { .entrance { display: none; } }
+
+.inlineEntrance {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 16px;
+  background: #f7fbee;
+  border: 1px solid #e4eddb;
+  border-radius: 20px;
+}
+
+.inlineEntrance .entranceMark {
+  width: 68px;
+  height: 72px;
+  border-radius: 23px;
+  box-shadow: 0 0 24px #c6e89c;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inlineEntrance .entranceMark,
+  .inlineEntrance > i { animation: none; }
+}

@@ -9,6 +9,7 @@ import { canAccessPortal } from '@/lib/portal-access';
 import { useAuthStore } from '@/stores/auth-store';
 import type { AuthUser, MeResponse } from '@/types/auth';
 
+import { BrandedEntrance } from '@/components/shared/branded-entrance';
 import { StaffEnergyArt } from './staff-brand';
 import styles from './staff-design.module.css';
 
@@ -65,14 +66,7 @@ function StaffWorkspacePlaceholder() {
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-8" aria-busy="true">
       <span className="sr-only" role="status">Checking staff access</span>
-      <div aria-hidden="true" className="space-y-5">
-        <div className="h-6 w-40 rounded-md bg-emerald-100" />
-        <div className="h-28 rounded-2xl border border-emerald-100 bg-emerald-50" />
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="h-24 rounded-2xl border border-emerald-100 bg-emerald-50/60" />
-          <div className="h-24 rounded-2xl border border-emerald-100 bg-emerald-50/60" />
-        </div>
-      </div>
+      <BrandedEntrance inline />
     </main>
   );
 }
