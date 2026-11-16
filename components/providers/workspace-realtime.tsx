@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { createNotificationSocket } from '@/lib/realtime/notifications';
+import type { createNotificationSocket } from '@/lib/realtime/notifications';
 import { canCatchUpQuery, notificationAffectsQuery, workspaceChangeAffectsQuery } from '@/lib/realtime/workspace-updates';
 import { useAuthStore } from '@/stores/auth-store';
 import type { NotificationRecord } from '@/types/notification';
@@ -23,6 +23,7 @@ export function WorkspaceRealtime({ children }: { children: ReactNode }) {
     if (!account || !token) return;
 
     let active = true;
+    let live = false;
     let socket: ReturnType<typeof createNotificationSocket> | undefined;
     let timer: number | undefined;
     const pending: NotificationRecord[] = [];
@@ -62,14 +63,17 @@ export function WorkspaceRealtime({ children }: { children: ReactNode }) {
       }, 120);
     };
 
-    try {
+    void import('@/lib/realtime/notifications').then(({ createNotificationSocket }) => {
+      if (!current()) return;
       socket = createNotificationSocket(token);
       socket.on('notification:ready', (identity) => {
         if (!current() || identity.userId !== account || identity.role !== role) return;
+        live = true;
         setConnectedToken(token);
         resume();
       });
       const disconnected = () => {
+        live = false;
         if (current()) setConnectedToken(null);
       };
       socket.on('disconnect', disconnected);
@@ -90,12 +94,10 @@ export function WorkspaceRealtime({ children }: { children: ReactNode }) {
         scheduleRefresh();
       });
       socket.connect();
-    } catch {
-      socket?.disconnect();
-    }
+    }).catch(() => socket?.disconnect());
 
     // Changes without a notification still appear while the portal is open.
-    const poll = window.setInterval(() => catchUp(15_000), 15_000);
+    const poll = window.setInterval(() => catchUp(live ? 30_000 : 15_000), 15_000);
     document.addEventListener('visibilitychange', resume);
     window.addEventListener('online', resume);
 

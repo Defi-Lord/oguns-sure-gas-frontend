@@ -5,7 +5,6 @@ import type {
 
 import './globals.css';
 import '@/components/native/native.css';
-import { CustomerEntrance } from '@/components/customer/customer-welcome';
 import '@/components/shared/mobile-usability.css';
 import { NativeRuntime } from '@/components/native/native-runtime';
 import { DeveloperCredit } from '@/components/shared/developer-credit';
@@ -42,7 +41,6 @@ export default function RootLayout({
         <AppProviders>
           <NativeRuntime/>
           <WebAppWorker />
-          <CustomerEntrance/>
           {children}
           <DeveloperCredit />
         </AppProviders>
