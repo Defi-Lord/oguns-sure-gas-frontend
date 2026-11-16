@@ -1,4 +1,6 @@
 'use client';
+
+import { BrandedWorkspacePlaceholder } from '@/components/shared/branded-entrance';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, ArrowUpRight, Flame, MapPin, Package, ShieldCheck, Sparkles, Truck, Gift } from 'lucide-react';
@@ -24,7 +26,7 @@ export function CustomerLanding() {
 }
 export function CustomerArrival() {
   const { user, hasHydrated } = useAuthStore(), { branch, loading } = useShoppingBranch();
-  if (!hasHydrated) return <div className={s.arrival} role="status">Getting your space ready…</div>;
+  if (!hasHydrated) return <BrandedWorkspacePlaceholder label="Checking customer access" />;
   if (user?.role !== 'CUSTOMER' || user.status !== 'ACTIVE') return <section className={s.arrival}><Sparkles size={32}/><h1>Your good energy starts here.</h1><p>Sign in to make this space yours.</p><Link href="/shop/login" className={s.primary}>Sign in <ArrowRight size={17}/></Link></section>;
   return <section className={s.arrival}><span className={s.arrivalOrb}><Flame size={49}/></span><span className={s.smallLabel}>YOUR MYSUREGAS SPACE</span><h1>Good to have you here,<br/><em>{user.firstName}.</em></h1><p>{branch ? `${branch.name} is ready for your next everyday essential.` : 'Let’s make your next refill feel effortless. Start by saving your local branch.'}</p>{!branch && !loading && <CustomerBranchSettings initial/>}<div className={s.arrivalActions}><Link href="/shop" className={s.primary}>Enter your shop <ArrowRight size={18}/></Link><Link href="/shop/orders" className={s.secondary}>View my orders <Package size={17}/></Link></div></section>;
 }
