@@ -1,4 +1,6 @@
 'use client';
+
+import { BrandedWorkspacePlaceholder } from '@/components/shared/branded-entrance';
 import { announceQuick } from '@/lib/experience/moment-policy';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
@@ -51,7 +53,7 @@ function RewardsAccount({owner,view}:{owner:string;view:'giveaways'|'vouchers'})
  <p className={s.footerNote}><ShieldCheck size={16}/> Entry approval, winner selection and voucher redemption are confirmed by MySureGas.</p></div>;
 }
 export function CustomerRewards({view}:{view:'giveaways'|'vouchers'}){
- const {user,hasHydrated,sessionVersion}=useAuthStore();if(!hasHydrated)return <p className={s.loading}>Preparing your rewards…</p>;
+ const {user,hasHydrated,sessionVersion}=useAuthStore();if(!hasHydrated)return <BrandedWorkspacePlaceholder label="Preparing your rewards" />;
  if(user?.role!=='CUSTOMER'||user.status!=='ACTIVE')return <section className={s.guest}><span className={s.icon}><Gift size={32}/></span><span className={s.eyebrow}>A LITTLE EXTRA GOOD ENERGY</span><h1>Your rewards start here.</h1><p>Sign in with your customer account to join giveaways and view your own vouchers.</p><Link href={`/shop/login?next=${view}`} className={s.primary}>Sign in to see rewards <ArrowRight size={16}/></Link><Link href="/shop" className={s.inline}>Back to the shop</Link></section>;
  return <RewardsAccount key={`${user.id}:${sessionVersion}:${view}`} owner={user.id} view={view}/>;
 }

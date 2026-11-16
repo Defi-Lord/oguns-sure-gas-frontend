@@ -1,4 +1,6 @@
 'use client';
+
+import { BrandedWorkspacePlaceholder } from '@/components/shared/branded-entrance';
 import { PushAlerts } from '@/components/notifications/push-alerts';
 import { useRef, useState } from 'react';
 import Link from 'next/link';
@@ -17,7 +19,7 @@ const label = (value:string) => value.charAt(0)+value.slice(1).toLowerCase();
 const timestamp = (value:string) => {const date=new Date(value);return Number.isNaN(date.getTime()) ? 'Time unavailable' : date.toLocaleString('en-NG',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});};
 export function CustomerInbox() {
  const {user,hasHydrated}=useAuthStore();
- if(!hasHydrated)return <div className={s.empty} role="status">Preparing your inbox…</div>;
+ if(!hasHydrated)return <BrandedWorkspacePlaceholder label="Preparing your inbox" />;
  if(user?.role!=='CUSTOMER'||user.status!=='ACTIVE')return <section className={s.guest}><div className={s.guestOrb}><Bell size={42}/></div><span className={s.eyebrow}>YOUR CUSTOMER SPACE</span><h1>Your updates belong here.</h1><p>Sign in with your customer account to see order updates, delivery alerts and messages from MySureGas.</p><Link className={c.primary} href="/shop/login?next=notifications">Sign in to your inbox <ArrowUpRight size={18}/></Link><Link className={s.back} href="/shop">Back to the shop</Link></section>;
  return <Inbox key={user.id} id={user.id}/>;
 }

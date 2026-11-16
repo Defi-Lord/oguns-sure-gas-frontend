@@ -1,4 +1,6 @@
 'use client';
+
+import { BrandedWorkspacePlaceholder } from '@/components/shared/branded-entrance';
 import type { GasVerification } from '@/types/delivery';
 import { GasDiscrepancy } from '@/components/shared/gas-discrepancy';
 import { CustomerOrderCancel } from './customer-order-cancel';
@@ -32,7 +34,7 @@ function phone(value:string|null|undefined){return value&&/^\+?[\d\s()-]{7,25}$/
 export function CustomerOrders(){
  const auth=useAuthStore();const params=useSearchParams();
  const owner=auth.hasHydrated&&auth.user?.role==='CUSTOMER'&&auth.user.status==='ACTIVE'?auth.user.id:'';
- if(!auth.hasHydrated)return <p role="status">Loading your account…</p>;
+ if(!auth.hasHydrated)return <BrandedWorkspacePlaceholder label="Checking customer access" />;
  if(!owner)return <div className={s.empty}><ShieldCheck size={38}/><h2>Your orders, in one place.</h2><p>Sign in to your customer account to see purchases and delivery updates.</p><Link href="/shop/login?next=orders" className={s.primary}>Sign in to view orders<ArrowUpRight size={17}/></Link></div>;
  return <OrdersSpace key={owner} owner={owner} selected={params.get('order')??''}/>;
 }

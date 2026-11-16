@@ -1,4 +1,6 @@
 'use client';
+
+import { BrandedWorkspacePlaceholder } from '@/components/shared/branded-entrance';
 import { announceQuick } from '@/lib/experience/moment-policy';
 import { getDevicePosition } from '@/lib/native/device';
 
@@ -243,7 +245,7 @@ function Account({ user }: { user: AuthUser }) {
 
 export function CustomerProfile() {
   const { user, hasHydrated } = useAuthStore();
-  if (!hasHydrated) return <div className={s.loading} role="status">Preparing your account…</div>;
+  if (!hasHydrated) return <BrandedWorkspacePlaceholder label="Checking customer access" />;
   if (user?.role !== 'CUSTOMER' || user.status !== 'ACTIVE') return <section className={s.guest}><span className={s.careOrb}><UserRound size={38}/></span><span className={s.eyebrow}>YOUR CUSTOMER SPACE</span><h1>A little more personal.</h1><p>Sign in with your customer account to manage your profile and save your delivery addresses.</p><Link href="/shop/login?next=profile" className={c.primary}>Sign in to your account <ArrowUpRight size={17}/></Link><Link className={s.textButton} href="/shop">Back to the shop</Link></section>;
   return <Account key={user.id} user={user}/>;
 }

@@ -9,7 +9,7 @@ import { canAccessPortal } from '@/lib/portal-access';
 import { useAuthStore } from '@/stores/auth-store';
 import type { AuthUser, MeResponse } from '@/types/auth';
 
-import { BrandedEntrance } from '@/components/shared/branded-entrance';
+import { BrandedWorkspacePlaceholder } from '@/components/shared/branded-entrance';
 import { StaffEnergyArt } from './staff-brand';
 import styles from './staff-design.module.css';
 
@@ -42,7 +42,7 @@ export function StaffWorkspace({ children }: { children: ReactNode }) {
   };
 
   if (!hasHydrated || !isAuthenticated || !user) {
-    return <StaffWorkspacePlaceholder />;
+    return <BrandedWorkspacePlaceholder label="Checking staff access" />;
   }
   if (user.role !== 'STAFF') {
     return <StaffAccessMessage title="Staff account required" detail="This workspace is for staff accounts. Use your account's portal to continue." action={<button onClick={logout} className="rounded-xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white">Return to staff sign-in</button>} />;
@@ -50,7 +50,7 @@ export function StaffWorkspace({ children }: { children: ReactNode }) {
   if (session.isError) {
     return <StaffAccessMessage title="Unable to verify your session" detail={getApiErrorMessage(session.error)} action={<><button onClick={() => void session.refetch()} className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white"><RefreshCw className="size-4" /> Retry</button><button onClick={logout} className="px-4 py-3 text-sm font-semibold">Sign out</button></>} />;
   }
-  if (session.isPending || !session.data) return <StaffWorkspacePlaceholder />;
+  if (session.isPending || !session.data) return <BrandedWorkspacePlaceholder label="Checking staff access" />;
   if (!canAccessPortal(session.data, 'staff') || session.data.id !== user.id) {
     return <StaffAccessMessage title="Staff access unavailable" detail="Your account cannot access this workspace. Contact your branch manager for assistance." action={<button onClick={logout} className="rounded-xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white">Return to sign-in</button>} />;
   }
@@ -59,15 +59,6 @@ export function StaffWorkspace({ children }: { children: ReactNode }) {
     <StaffUserContext.Provider value={session.data}>
       <StaffStudioShell logout={logout}>{children}</StaffStudioShell>
     </StaffUserContext.Provider>
-  );
-}
-
-function StaffWorkspacePlaceholder() {
-  return (
-    <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-8" aria-busy="true">
-      <span className="sr-only" role="status">Checking staff access</span>
-      <BrandedEntrance inline />
-    </main>
   );
 }
 

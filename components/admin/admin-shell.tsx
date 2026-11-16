@@ -1,5 +1,7 @@
 'use client';
 
+import { BrandedWorkspacePlaceholder } from '@/components/shared/branded-entrance';
+
 import {
   useEffect,
   useState,
@@ -13,10 +15,6 @@ import {
 import {
   useQuery,
 } from '@tanstack/react-query';
-
-import {
-  Loader2,
-} from 'lucide-react';
 
 import {
   api,
@@ -262,24 +260,7 @@ export function AdminShell({
     !isAuthenticated ||
     !user
   ) {
-    return (
-      <main className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-[#f5f9f7] dark:bg-[#061713]">
-        <div className="ambient-energy-layer">
-          <span className="ambient-orb ambient-orb-one" />
-          <span className="ambient-orb ambient-orb-two" />
-        </div>
-
-        <div className="relative z-10 flex flex-col items-center gap-4">
-          <div className="flex size-16 items-center justify-center rounded-[22px] bg-emerald-600 text-white shadow-xl shadow-emerald-600/20">
-            <Loader2 className="size-7 animate-spin" />
-          </div>
-
-          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
-            Preparing your command center...
-          </p>
-        </div>
-      </main>
-    );
+    return <BrandedWorkspacePlaceholder label="Checking admin access" />;
   }
 
   return (

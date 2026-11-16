@@ -1,4 +1,6 @@
 'use client';
+
+import { BrandedWorkspacePlaceholder } from '@/components/shared/branded-entrance';
 import { announceQuick } from '@/lib/experience/moment-policy';
 import { CheckoutCylinderPhoto } from '@/components/shared/cylinder-photo';
 import { useRef, useState, type FormEvent } from 'react';
@@ -42,7 +44,7 @@ export function CustomerCheckout(){
  async function initialize(){if(!checkout?.payment||!owner)return;await task('payment',async()=>{const result=(await api.post<Envelope<{authorizationUrl:string}>>(`/payments/paystack/${checkout.payment!.id}/initialize`,{})).data.data;const url=new URL(result.authorizationUrl);if(url.protocol!=='https:'||!(url.hostname==='paystack.com'||url.hostname.endsWith('.paystack.com')))throw new Error('The payment link could not be validated. Please contact your branch.');if(sameOwner())cart.rememberPayment(owner,checkout!.id,url.href);await session.refetch();});}
  async function verify(){if(!checkout?.payment)return;await task('verify',async()=>{await api.post(`/payments/paystack/${checkout.payment!.id}/verify`,{});await session.refetch();});}
  async function cancel(){if(!checkoutId)return;await task('cancel',async()=>{const result=(await api.patch<Envelope<{checkout:Checkout}>>(`/checkout/${checkoutId}/cancel`,{})).data.data.checkout;if(['CANCELLED','EXPIRED'].includes(result.status)){cart.forgetCheckout(owner);}else{await session.refetch();throw new Error('This checkout cannot be cancelled in its current state.');}});}
- if(!auth.hasHydrated||!cart.hydrated)return <p role="status">Loading checkout…</p>;
+ if(!auth.hasHydrated||!cart.hydrated)return <BrandedWorkspacePlaceholder label="Preparing checkout" />;
  if(!active)return <div className={s.empty}><LockKeyhole size={37}/><h3>Sign in to continue.</h3><p>Your bag will be here when you return. Checkout needs an active customer account.</p><Link href="/shop/login?next=checkout" className={s.primary}>Sign in<ArrowRight size={16}/></Link><Link href="/shop/register?next=checkout" className={s.backLink}>Create a customer account</Link></div>;
  if(checkoutId&&session.isPending)return <p role="status">Loading your reserved checkout…</p>;
  if(checkoutId&&session.isError)return <div className={s.empty} role="alert"><h3>We couldn’t load your checkout.</h3><p>{getApiErrorMessage(session.error)}</p><button className={s.button} onClick={()=>void session.refetch()}>Retry checkout</button><p>Your reservation is retained. We will not create another checkout.</p></div>;

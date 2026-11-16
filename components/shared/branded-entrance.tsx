@@ -12,3 +12,12 @@ export function BrandedEntrance({ inline = false }: { inline?: boolean } = {}) {
     </div>
   );
 }
+
+export function BrandedWorkspacePlaceholder({ label }: { label: string }) {
+  return (
+    <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-8" aria-busy="true">
+      <span className="sr-only" role="status">{label}</span>
+      <BrandedEntrance inline />
+    </div>
+  );
+}

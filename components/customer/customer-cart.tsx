@@ -1,4 +1,6 @@
 'use client';
+
+import { BrandedWorkspacePlaceholder } from '@/components/shared/branded-entrance';
 import Link from 'next/link';
 import { useState } from 'react';
 import { ArrowRight, Flame, Package, Trash2, ShoppingBag, MapPin, Minus, Plus, LockKeyhole } from 'lucide-react';
@@ -15,7 +17,7 @@ export function CartQuantity({line,disabled=false}:{line:CartLine;disabled?:bool
 export function CustomerCart(){
  const now=useCustomerClock();
  const cart=useCustomerCart(),user=useAuthStore(v=>v.user);
- if(!cart.hydrated)return <p role="status">Loading your bag…</p>;
+ if(!cart.hydrated)return <BrandedWorkspacePlaceholder label="Preparing your bag" />;
  const locked=cart.reserving||Boolean(user&&(cart.checkouts[user.id]||(cart.uncertain[user.id]??0)>now));
  const subtotal=cart.items.reduce((sum,i)=>sum+i.price*i.quantity,0);
  return <><div className={s.shoppingHeading}><span className={s.pill}><ShoppingBag size={15}/> YOUR SHOPPING BAG</span><h1>A little closer to<br/><em>your everyday essentials.</em></h1><p>Review your products and quantities before checkout.</p></div>{!cart.items.length?<div className={s.empty}><ShoppingBag size={40}/><h3>Your bag is waiting for something good.</h3><p>Choose a branch and add the products you need.</p><Link href="/shop#branches" className={s.primary}>Explore products<ArrowRight size={17}/></Link>{user&&cart.checkouts[user.id]&&<Link href="/shop/checkout" className={s.button}>Resume your checkout</Link>}</div>:<div className={s.checkoutGrid}><section className={s.bagPanel}><div className={s.bagBranch}><MapPin size={18}/><div><strong>{cart.branch?.name}</strong><small>{cart.branch?.city} · Products from one branch</small></div></div>{locked&&<p className={s.gasNote}><LockKeyhole size={16}/> A checkout is already reserved. Resume it before changing this bag.</p>}{cart.items.map(line=><article className={s.bagLine} key={line.id}><span className={s.bagIcon}>{line.type==='GAS'?<Flame size={28}/>:<Package size={28}/>}</span><div className={s.bagLineCopy}><h2>{line.name}</h2><p>{formatMoney(line.price)} per {line.unit}</p><CartQuantity key={`${line.id}-${cart.branch?.id}`} line={line} disabled={locked}/></div><div className={s.bagLineEnd}><strong>{formatMoney(line.price*line.quantity)}</strong><button aria-label={`Remove ${line.name}`} disabled={locked} onClick={()=>cart.remove(line.id)}><Trash2 size={16}/><span>Remove</span></button></div></article>)}<Link href="/shop" className={s.backLink}>← Continue shopping</Link></section><aside className={s.orderSummary}><span className={s.eyebrow}>YOUR BAG AT A GLANCE</span><h2>Order summary</h2><div><span>Product subtotal</span><strong>{formatMoney(subtotal)}</strong></div><p>Estimated product prices. Delivery, any other applicable fees and discounts are calculated at checkout.</p><Link href="/shop/checkout" className={s.primary}>{locked?'Resume checkout':'Continue to checkout'}<ArrowRight size={17}/></Link><span className={s.summaryAssurance}><LockKeyhole size={14}/> Review the final total before payment.</span></aside></div>}</>;
