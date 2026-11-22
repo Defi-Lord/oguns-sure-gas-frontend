@@ -17,7 +17,7 @@ interface CartState {
  rememberPayment: (owner:string,checkoutId:string,url:string) => void;
  forgetCheckout: (owner: string, paid?: boolean) => void; markUncertain: (owner: string) => void;
 }
-export const validQuantity = (type: ProductType, value: number) => Number.isFinite(value) && value >= 1 && (type === 'GAS' ? Math.abs(value * 1000 - Math.round(value * 1000)) < 1e-7 : Number.isSafeInteger(value));
+export const validQuantity = (type: ProductType, value: number) => Number.isFinite(value) && value >= (type === 'GAS' ? 3 : 1) && (type === 'GAS' ? Math.abs(value * 1000 - Math.round(value * 1000)) < 1e-7 : Number.isSafeInteger(value));
 export function useCustomerClock(){const [now,setNow]=useState(()=>Date.now());useEffect(()=>{const timer=setInterval(()=>setNow(Date.now()),1000);return ()=>clearInterval(timer);},[]);return now;}
 export function bagFingerprint(state:Pick<CartState,'branch'|'items'>){return JSON.stringify({branch:state.branch,items:state.items});}
 function locked(state: CartState) { const user=useAuthStore.getState().user; return state.reserving || Boolean(user && (state.checkouts[user.id] || (state.uncertain[user.id] ?? 0) > Date.now())); }
