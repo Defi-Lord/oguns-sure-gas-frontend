@@ -17,7 +17,7 @@ export function CustomerProductSheet({ product, branch, visual, onClose }: {
   product: Product; branch: PublicBranch; visual: ReactNode; onClose: () => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null), scrollArea = useRef<HTMLDivElement>(null);
-  const [amount, setAmount] = useState('1'), [added, setAdded] = useState(''), [error, setError] = useState('');
+  const [amount, setAmount] = useState(product.type === 'GAS' ? '3' : '1'), [added, setAdded] = useState(''), [error, setError] = useState('');
   const bag = useCustomerCart(), user = useAuthStore(state => state.user), now = useCustomerClock();
   const quantity = Number(amount), valid = validQuantity(product.type, quantity);
   const unitPrice = Number(product.pricePerUnit), total = unitPrice * quantity;
@@ -25,6 +25,7 @@ export function CustomerProductSheet({ product, branch, visual, onClose }: {
   const locked = bag.reserving || Boolean(user && (bag.checkouts[user.id] || (bag.uncertain[user.id] ?? 0) > now));
   const differentBranch = bag.items.length > 0 && bag.branch?.id !== branch.id;
   const gas = product.type === 'GAS';
+  const minimum = gas ? 3 : 1;
   const presets = gas ? [3, 5, 6, 12.5] : [1, 2, 3, 4];
 
   useEffect(() => {
@@ -59,8 +60,8 @@ export function CustomerProductSheet({ product, branch, visual, onClose }: {
 
   function change(value: string) { setAmount(value); setAdded(''); setError(''); }
   function step(direction: number) {
-    const value = Number.isFinite(quantity) ? quantity : 1;
-    change(String(Math.max(1, Math.round((value + direction) * 1000) / 1000)));
+    const value = Number.isFinite(quantity) ? quantity : minimum;
+    change(String(Math.max(minimum, Math.round((value + direction) * 1000) / 1000)));
   }
   function add(replace = false) {
     setAdded(''); setError('');
@@ -90,9 +91,9 @@ export function CustomerProductSheet({ product, branch, visual, onClose }: {
         <p className={s.intro}>{gas ? 'Choose the refill amount you need.' : 'An everyday essential from your MySureGas branch.'}</p>
         <div className={s.branch}><span><MapPin size={22}/></span><div><small>Your saved branch</small><strong>{branch.name}</strong></div></div>
         <section className={s.quantitySection} aria-label="Product quantity selection"><label htmlFor="customer-product-quantity">{gas ? 'How much gas?' : 'How many do you need?'}</label>
-          <div className={s.stepper}><button type="button" aria-label="Decrease quantity" disabled={locked || (valid && quantity <= 1)} onClick={() => step(-1)}><Minus size={23}/></button><div><input id="customer-product-quantity" aria-label="Product quantity" inputMode={gas ? 'decimal' : 'numeric'} type="number" min="1" step={gas ? '0.001' : '1'} value={amount} disabled={locked} onChange={event => change(event.target.value)} aria-invalid={!valid} aria-describedby="customer-product-quantity-hint"/><span>{product.unit}</span></div><button type="button" aria-label="Increase quantity" disabled={locked} onClick={() => step(1)}><Plus size={23}/></button></div>
+          <div className={s.stepper}><button type="button" aria-label="Decrease quantity" disabled={locked || (valid && quantity <= minimum)} onClick={() => step(-1)}><Minus size={23}/></button><div><input id="customer-product-quantity" aria-label="Product quantity" inputMode={gas ? 'decimal' : 'numeric'} type="number" min={minimum} step={gas ? '0.001' : '1'} value={amount} disabled={locked} onChange={event => change(event.target.value)} aria-invalid={!valid} aria-describedby="customer-product-quantity-hint"/><span>{product.unit}</span></div><button type="button" aria-label="Increase quantity" disabled={locked} onClick={() => step(1)}><Plus size={23}/></button></div>
           <div className={s.presets} aria-label="Quick quantities">{presets.map(value => <button type="button" key={value} disabled={locked} aria-pressed={quantity === value} onClick={() => change(String(value))}>{value} {product.unit}</button>)}</div>
-          <p id="customer-product-quantity-hint" className={valid ? s.hint : s.error}>{gas ? valid ? 'Minimum 1 kg. Decimal quantities accepted.' : 'Enter at least 1 kg, with up to 3 decimal places.' : valid ? 'Choose a whole-number quantity.' : 'Enter a whole number of at least 1.'}</p>
+          <p id="customer-product-quantity-hint" className={valid ? s.hint : s.error}>{gas ? valid ? 'Minimum 3 kg. Decimal quantities accepted.' : 'Enter at least 3 kg, with up to 3 decimal places.' : valid ? 'Choose a whole-number quantity.' : 'Enter a whole number of at least 1.'}</p>
         </section>
         {gas && <p className={s.photoNote}><Camera size={22}/><span>Add your cylinder photo at checkout.</span></p>}
         <details className={s.about}><summary>{gas ? 'About this refill' : 'About this product'}<ChevronDown size={19}/></summary><p>{product.description || 'An everyday essential from your MySureGas branch.'}</p>{gas && <p>Cooking gas is priced per {product.unit}. Final quantity and availability are confirmed when ordering.</p>}<p>{branch.address}, {branch.city}</p></details>
