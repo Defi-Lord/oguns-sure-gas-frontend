@@ -11,7 +11,7 @@ export function WorkspaceDock({ portal, openMenu, unread }: Props) {
   const pathname = usePathname();
   const items = portal === 'staff'
     ? [{ href: '/staff', label: 'Home', icon: House }, { href: '/staff/orders', label: 'Orders', icon: Package }, { href: '/staff/redeem', label: 'Redeem', icon: Gift }, { href: '/staff/products', label: 'Products', icon: Package }]
-    : [{ href: '/rider', label: 'Deliveries', icon: House }, { href: '/rider/history', label: 'History', icon: History }, { href: '/rider/wallet', label: 'Wallet', icon: Wallet }, { href: '/rider/notifications', label: 'Inbox', icon: Bell }];
+    : [{ href: '/rider', label: 'Deliveries', icon: House }, { href: '/rider/history', label: 'History', icon: History }, { href: '/rider/wallet', label: 'Tip payouts', icon: Wallet }, { href: '/rider/notifications', label: 'Inbox', icon: Bell }];
   const extraPage = !items.some(item => item.href === pathname);
   return <nav className={styles.dock} aria-label={`${portal === 'staff' ? 'Staff' : 'Rider'} primary navigation`}>
     {items.map(({ href, label, icon: Icon }) => <Link key={href} href={href} aria-current={pathname === href ? 'page' : undefined}>

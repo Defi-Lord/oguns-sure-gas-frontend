@@ -1,147 +1,17 @@
 'use client';
-
-import { useState, type FormEvent } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api, getApiErrorMessage } from '@/lib/api/client';
 import { useAuthStore } from '@/stores/auth-store';
-import styles from './refund-panel.module.css';
-
-type Withdrawal = {
-  id: string;
-  riderName: string;
-  amount: string;
-  status: 'PROCESSING' | 'PAID' | 'FAILED' | 'REVERSED';
-  bankName: string;
-  accountLast4: string;
-  accountName: string;
-  reference: string;
-  needsApproval: boolean;
-  providerStatus: string;
-};
-type Queue = { page: number; pageSize: number; total: number; withdrawals: Withdrawal[] };
-
-const currency = new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' });
-
-export function RiderWithdrawalsPanel() {
-  const user = useAuthStore(state => state.user);
-  if (user?.role !== 'SUPER_ADMIN') return null;
-  return <WithdrawalReview key={user.id} userId={user.id} />;
-}
-
-function WithdrawalReview({ userId }: { userId: string }) {
-  const [page, setPage] = useState(1);
-  const [selected, setSelected] = useState<Withdrawal | null>(null);
-  const [otp, setOtp] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
-
-  const queue = useQuery({
-    queryKey: ['finance-rider-withdrawals', userId, page],
-    queryFn: async ({ signal }) =>
-      (await api.get<{ data: Queue }>('/rider-wallet/admin/withdrawals', { params: { page }, signal })).data.data,
-    refetchInterval: 30_000,
-    retry: false,
-  });
-
-  async function reload() {
-    const { data } = await queue.refetch();
-    if (data && data.withdrawals.length === 0 && page > 1) setPage(page - 1);
-  }
-
-  async function updateWithdrawal(id: string, approval?: string) {
-    setBusy(true);
-    setError('');
-    setMessage('');
-    setOtp('');
-    try {
-      const { data } = await api.post<{ data: { data?: Withdrawal } }>(
-        approval ? `/rider-wallet/withdrawals/${id}/finalize-otp` : `/rider-wallet/admin/withdrawals/${id}/refresh`,
-        approval ? { otp: approval } : {},
-      );
-      const result = data.data.data;
-      if (!result) setMessage('No verified transfer status was returned. Check the reference in Paystack.');
-      else if (result.status === 'PAID') setMessage('Paystack confirmed the bank transfer.');
-      else if (result.status === 'FAILED' || result.status === 'REVERSED') {
-        setMessage('Paystack confirmed the transfer did not complete. The withdrawal amount was released to the wallet.');
-      } else if (result.needsApproval) setMessage('Paystack is waiting for transfer approval.');
-      else setMessage('The bank transfer is still processing.');
-      setSelected(null);
-    } catch (cause) {
-      setError(getApiErrorMessage(cause));
-    } finally {
-      await reload();
-      setBusy(false);
-    }
-  }
-
-  function approve(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (selected && !busy) void updateWithdrawal(selected.id, otp);
-  }
-
-  return (
-    <section className={styles.panel} aria-labelledby="rider-withdrawals-heading">
-      <header>
-        <div>
-          <h2 id="rider-withdrawals-heading">Rider wallet withdrawals</h2>
-          <p>Check transfers to riders’ verified bank accounts and approve them when Paystack asks for an OTP.</p>
-        </div>
-        <button type="button" disabled={busy || queue.isFetching} onClick={() => void reload()}>Refresh list</button>
-      </header>
-      {error && <p className={styles.error} role="alert">{error}</p>}
-      {message && <p role="status">{message}</p>}
-      {selected && (
-        <form className={styles.review} onSubmit={approve}>
-          <h3>Approve bank transfer</h3>
-          <p>{selected.riderName} · {selected.bankName} · •••• {selected.accountLast4}</p>
-          <p>{currency.format(Number(selected.amount))} · {selected.reference}</p>
-          <label>
-            Paystack transfer OTP
-            <input className="ml-2 rounded border border-emerald-200 p-2" type="text" inputMode="numeric"
-              autoComplete="off" pattern="[0-9]{4,10}" maxLength={10} required value={otp}
-              onChange={event => setOtp(event.target.value.replace(/\D/g, ''))} disabled={busy} />
-          </label>
-          <div className={styles.actions}>
-            <button type="button" disabled={busy} onClick={() => { setSelected(null); setOtp(''); }}>Cancel</button>
-            <button type="submit" className={styles.primary} disabled={busy || otp.length < 4}>Approve transfer</button>
-          </div>
-        </form>
-      )}
-      {queue.isPending ? <p role="status">Loading withdrawals…</p> : queue.isError ? (
-        <p className={styles.error} role="alert">{getApiErrorMessage(queue.error)}</p>
-      ) : queue.data.withdrawals.length === 0 ? <p>No rider withdrawals are waiting.</p> : (
-        <>
-          <div className={styles.table}>
-            <table>
-              <thead><tr><th>Rider / destination</th><th>Amount</th><th>Transfer status</th><th>Action</th></tr></thead>
-              <tbody>
-                {queue.data.withdrawals.map(withdrawal => (
-                  <tr key={withdrawal.id}>
-                    <td><strong>{withdrawal.riderName}</strong><small>{withdrawal.accountName} · {withdrawal.bankName} · •••• {withdrawal.accountLast4}</small><small>{withdrawal.reference}</small></td>
-                    <td>{currency.format(Number(withdrawal.amount))}</td>
-                    <td>{withdrawal.needsApproval ? 'Awaiting Paystack OTP' :
-                      ['initiating', 'initiation_uncertain'].includes(withdrawal.providerStatus) ? 'Waiting for provider verification' : 'Processing'}</td>
-                    <td>
-                      {withdrawal.needsApproval && <button type="button" disabled={busy} onClick={() => {
-                        setSelected(withdrawal); setOtp(''); setError(''); setMessage('');
-                      }}>Enter Paystack OTP</button>}
-                      {' '}
-                      <button type="button" disabled={busy} onClick={() => void updateWithdrawal(withdrawal.id)}>Check Paystack status</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className={styles.pagination}>
-            <button type="button" disabled={busy || page === 1} onClick={() => { setSelected(null); setOtp(''); setPage(page - 1); }}>Previous</button>
-            <span>Page {page}</span>
-            <button type="button" disabled={busy || page * queue.data.pageSize >= queue.data.total}
-              onClick={() => { setSelected(null); setOtp(''); setPage(page + 1); }}>Next</button>
-          </div>
-        </>
-      )}
-    </section>
-  );
+import s from './refund-panel.module.css';
+type Tip={id:string;riderId:string;riderName:string;gross:string;companyFee:string|null;processingFee:string|null;net:string|null;status:string;bankName:string|null;accountLast4:string|null;orderNumber:string;reference:string|null};
+type Bank={riderId:string;riderName:string;bankName:string;accountName:string;accountLast4:string;ready:boolean;subaccountCode:string};
+type Data={tips:Tip[];banks:Bank[];page:number;pages:number;total:number};
+const money=(v:string|null)=>v===null?'Not confirmed':new Intl.NumberFormat('en-NG',{style:'currency',currency:'NGN'}).format(Number(v));
+export function RiderWithdrawalsPanel(){const user=useAuthStore(v=>v.user);return user?.role==='SUPER_ADMIN'?<PayoutReview key={user.id} userId={user.id}/>:null;}
+function PayoutReview({userId}:{userId:string}){
+ const [page,setPage]=useState(1),[busy,setBusy]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState('');
+ const q=useQuery({queryKey:['finance-rider-automatic-payouts',userId,page],queryFn:async({signal})=>(await api.get<{data:Data}>('/rider-wallet/admin/automatic-payouts',{params:{page},signal})).data.data,retry:false,refetchInterval:30000});
+ async function check(riderId:string,bank=false){if(busy)return;setBusy(true);setError('');setMessage('');try{const r=(await api.post<{data:{message:string}}>(bank?`/rider-wallet/admin/payout-banks/${riderId}/refresh`:`/rider-wallet/admin/automatic-payouts/${riderId}/refresh`,{})).data.data;setMessage(r.message);}catch(e){setError(getApiErrorMessage(e));}finally{await q.refetch();setBusy(false);}}
+ return <section className={s.panel}><header><div><small className={s.eyebrow}>RIDER TIP PAYOUTS</small><h2>Automatic bank settlements</h2></div><button disabled={busy||q.isFetching} onClick={()=>void q.refetch()}>Refresh records</button></header><p>Tips are routed to the assigned rider’s bank subaccount. Gas and product payments keep their existing company routing. There is no withdrawal approval queue for new tips.</p>{error&&<p role="alert" className={s.error}>{error}</p>}{message&&<p role="status">{message}</p>}{q.isError?<p role="alert">{getApiErrorMessage(q.error)}</p>:q.isPending?<p role="status">Loading rider payout records…</p>:<><h3>Rider payout accounts</h3><p>New or changed subaccounts may need verification in <a href="https://dashboard.paystack.com/#/subaccounts" target="_blank" rel="noopener noreferrer">Paystack’s Subaccounts page</a>. Check setup status here after verification. No customer tip is charged before the destination is ready.</p><div className={s.table}><table><thead><tr><th>Rider</th><th>Bank</th><th>Setup</th><th>Check</th></tr></thead><tbody>{q.data.banks.length?q.data.banks.map(b=><tr key={b.riderId}><td>{b.riderName}<small>{b.subaccountCode}</small></td><td>{b.bankName} · •••• {b.accountLast4}<small>{b.accountName}</small></td><td>{b.ready?'Ready':'Awaiting verification'}</td><td><button disabled={busy} onClick={()=>void check(b.riderId,true)}>Check setup</button></td></tr>):<tr><td colSpan={4}>No riders have connected payout banks yet.</td></tr>}</tbody></table></div><h3>Tip payout history</h3><div className={s.table}><table><thead><tr><th>Rider / order</th><th>Customer tip</th><th>Fees</th><th>Rider net</th><th>Bank / status</th><th>Check</th></tr></thead><tbody>{q.data.tips.length?q.data.tips.map(t=><tr key={t.id}><td>{t.riderName}<small>{t.orderNumber}</small><small>{t.reference}</small></td><td>{money(t.gross)}</td><td>Platform: {money(t.companyFee)}<small>Paystack: {money(t.processingFee)}</small></td><td>{money(t.net)}</td><td>{t.bankName??'Not initialized'}{t.accountLast4&&` · •••• ${t.accountLast4}`}<small>{t.status==='PAID'?'Bank settlement confirmed':t.status==='PENDING_PAYOUT'?'Customer paid · bank payout pending':t.status.replaceAll('_',' ').toLowerCase()}</small></td><td><button disabled={busy||t.status!=='PENDING_PAYOUT'} onClick={()=>void check(t.riderId)}>Check payout</button></td></tr>):<tr><td colSpan={6}>No rider tip payments recorded yet.</td></tr>}</tbody></table></div><div className={s.pagination}><button disabled={page<=1||q.isFetching} onClick={()=>setPage(p=>p-1)}>Previous</button><span>Page {page} of {q.data.pages}</span><button disabled={page>=q.data.pages||q.isFetching} onClick={()=>setPage(p=>p+1)}>Next</button></div></>}</section>;
 }
